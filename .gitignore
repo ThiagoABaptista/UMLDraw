@@ -1,0 +1,12 @@
+# Node / build
+node_modules
+dist
+out
+.vscode-test
+# SO
+.DS_Store
+Thumbs.db
+# VS Code
+.vscode/.*.db
+.vscode-test/
+EOF
