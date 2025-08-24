@@ -1,22 +1,101 @@
-import React from 'react';
-import { Stage, Layer, Rect, Text, Arrow } from 'react-konva';
+import React, { useState, useCallback } from 'react';
+import { Stage, Layer } from 'react-konva';
+import { UMLClassComponent } from '../components/UMLClass';
+import { UMLRelationshipComponent } from '../components/UMLRelationship';
+import { Toolbar } from '../components/Toolbar';
+import { UMLClass, UMLRelationship, UMLDiagram } from '../types/umlTypes';
+
+const initialDiagram: UMLDiagram = {
+  classes: [
+    {
+      id: '1',
+      name: 'Pessoa',
+      attributes: ['+ nome: string', '+ idade: number'],
+      methods: ['+ falar(): void'],
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120
+    },
+    {
+      id: '2',
+      name: 'Endereço',
+      attributes: ['+ rua: string', '+ cidade: string'],
+      methods: [],
+      x: 400,
+      y: 300,
+      width: 200,
+      height: 100
+    }
+  ],
+  relationships: [
+    {
+      id: 'rel1',
+      from: '1',
+      to: '2',
+      type: 'association'
+    }
+  ]
+};
 
 export default function App() {
+  const [diagram, setDiagram] = useState<UMLDiagram>(initialDiagram);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [tool, setTool] = useState<'select' | 'class' | 'relationship'>('select');
+
+  const handleClassDragEnd = useCallback((id: string, x: number, y: number) => {
+    setDiagram(prev => ({
+      ...prev,
+      classes: prev.classes.map(cls =>
+        cls.id === id ? { ...cls, x, y } : cls
+      )
+    }));
+  }, []);
+
+  const handleElementClick = useCallback((id: string) => {
+    setSelectedElement(id);
+  }, []);
+
+  const getClassCenter = (umlClass: UMLClass) => ({
+    x: umlClass.x + umlClass.width / 2,
+    y: umlClass.y + umlClass.height / 2
+  });
+
   return (
-    <Stage width={1000} height={700}>
-      <Layer>
-        {/* Caixa representando uma classe UML */}
-        <Rect x={80} y={80} width={220} height={120} fill="#dbeafe" stroke="#111827" strokeWidth={2} cornerRadius={6} />
-        <Text text="ClassePessoa" x={100} y={100} fontSize={18} fontStyle="bold" />
-        <Text text="+ nome: string\n+ idade: number" x={100} y={130} fontSize={14} />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <Toolbar tool={tool} onToolChange={setTool} />
+      
+      <Stage width={window.innerWidth} height={window.innerHeight - 50}>
+        <Layer>
+          {diagram.relationships.map(rel => {
+            const fromClass = diagram.classes.find(c => c.id === rel.from);
+            const toClass = diagram.classes.find(c => c.id === rel.to);
+            
+            if (!fromClass || !toClass) return null;
 
-        <Rect x={420} y={280} width={240} height={120} fill="#e9d5ff" stroke="#111827" strokeWidth={2} cornerRadius={6} />
-        <Text text="ClasseEndereco" x={440} y={300} fontSize={18} fontStyle="bold" />
-        <Text text="+ rua: string\n+ cidade: string" x={440} y={330} fontSize={14} />
+            return (
+              <UMLRelationshipComponent
+                key={rel.id}
+                relationship={rel}
+                from={getClassCenter(fromClass)}
+                to={getClassCenter(toClass)}
+                isSelected={selectedElement === rel.id}
+                onClick={handleElementClick}
+              />
+            );
+          })}
 
-        {/* Associação entre classes */}
-        <Arrow points={[300, 140, 420, 340]} pointerLength={10} pointerWidth={10} stroke="#111827" fill="#111827" />
-      </Layer>
-    </Stage>
+          {diagram.classes.map(umlClass => (
+            <UMLClassComponent
+              key={umlClass.id}
+              umlClass={umlClass}
+              onDragEnd={handleClassDragEnd}
+              onClick={handleElementClick}
+              isSelected={selectedElement === umlClass.id}
+            />
+          ))}
+        </Layer>
+      </Stage>
+    </div>
   );
 }

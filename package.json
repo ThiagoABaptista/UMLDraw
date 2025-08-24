@@ -4,39 +4,51 @@
   "description": "Extensão do VS Code para desenhar diagramas UML (React + Konva).",
   "version": "0.0.1",
   "publisher": "thiago-baptista",
-  "engines": { "vscode": "^1.84.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onCommand:umlDraw.start"],
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:umlDraw.start"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      { "command": "umlDraw.start", "title": "UMLDraw: Abrir editor" }
+      {
+        "command": "umlDraw.start",
+        "title": "UMLDraw: Abrir editor"
+      }
     ]
   },
   "scripts": {
     "compile": "tsc -p .",
     "watch": "tsc -p . -w",
     "build:webview": "webpack --mode production",
-    "watch:webview": "webpack --watch",
+    "watch:webview": "webpack --watch --mode development",
     "build": "npm run build:webview && npm run compile",
     "vscode:prepublish": "npm run build",
-    "package": "vsce package"
+    "package": "npx @vscode/vsce package"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@types/vscode": "^1.84.0",
-    "ts-loader": "^9.0.0",
+    "@vscode/vsce": "^2.15.0",
+    "buffer": "^6.0.3",
+    "process": "^0.11.10",
+    "ts-loader": "^9.4.0",
     "typescript": "^5.0.0",
-    "vsce": "^3.0.0",
-    "webpack": "^5.0.0",
-    "webpack-cli": "^4.0.0"
+    "util": "^0.12.5",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0"
   },
   "dependencies": {
-    "konva": "^9.0.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-konva": "^18.0.0"
+    "konva": "^9.3.22",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-konva": "^19.0.7"
   }
 }
