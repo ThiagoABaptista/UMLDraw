@@ -1,5 +1,5 @@
 import React from 'react';
-import { Arrow } from 'react-konva';
+import { Arrow, Text } from 'react-konva';
 import { UMLRelationship } from '../types/umlTypes';
 
 interface UMLRelationshipProps {
@@ -20,22 +20,52 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
   const getArrowConfig = () => {
     switch (relationship.type) {
       case 'inheritance':
-        return { pointerLength: 15, pointerWidth: 15, fill: '#111827' };
+        return { 
+          pointerLength: 15, 
+          pointerWidth: 15, 
+          fill: '#111827',
+          dash: [10, 5] 
+        };
       case 'composition':
-        return { pointerLength: 15, pointerWidth: 15, fill: '#111827' };
+        return { 
+          pointerLength: 15, 
+          pointerWidth: 15, 
+          fill: '#111827' 
+        };
       default:
-        return { pointerLength: 10, pointerWidth: 10, fill: '#111827' };
+        return { 
+          pointerLength: 10, 
+          pointerWidth: 10, 
+          fill: '#111827' 
+        };
     }
   };
 
+  // Calcula o ponto médio para posicionar o label
+  const midX = (from.x + to.x) / 2;
+  const midY = (from.y + to.y) / 2;
+
   return (
-    <Arrow
-      points={[from.x, from.y, to.x, to.y]}
-      {...getArrowConfig()}
-      stroke={isSelected ? "#3b82f6" : "#111827"}
-      strokeWidth={isSelected ? 3 : 2}
-      onClick={() => onClick(relationship.id)}
-      onTap={() => onClick(relationship.id)}
-    />
+    <>
+      <Arrow
+        points={[from.x, from.y, to.x, to.y]}
+        {...getArrowConfig()}
+        stroke={isSelected ? "#3b82f6" : "#111827"}
+        strokeWidth={isSelected ? 3 : 2}
+        onClick={() => onClick(relationship.id)}
+        onTap={() => onClick(relationship.id)}
+      />
+      
+      {relationship.label && (
+        <Text
+          x={midX - 20}
+          y={midY - 10}
+          text={relationship.label}
+          fontSize={12}
+          fill="#374151"
+          fontStyle="italic"
+        />
+      )}
+    </>
   );
 };

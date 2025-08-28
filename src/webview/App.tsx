@@ -106,6 +106,14 @@ export default function App() {
           isEditing: cls.id === selectedElement
         }))
       }));
+    } else {
+      setDiagram(prev => ({
+        ...prev,
+        classes: prev.classes.map(cls => ({
+          ...cls,
+          isEditing: false
+        }))
+      }));
     }
   }, [isEditing, selectedElement]);
 
@@ -132,6 +140,13 @@ export default function App() {
           if (e.target === e.target.getStage()) {
             setSelectedElement(null);
             setIsEditing(false);
+            setDiagram(prev => ({
+              ...prev,
+              classes: prev.classes.map(cls => ({
+                ...cls,
+                isEditing: false
+              }))
+            }));
           }
         }}
       >
