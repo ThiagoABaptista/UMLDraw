@@ -1,11 +1,13 @@
 import React from 'react';
-import { Group, Rect, Text } from 'react-konva';
+import { Group, Rect } from 'react-konva';
+import { EditableText } from './EditableText';
 import { UMLClass } from '../types/umlTypes';
 
 interface UMLClassProps {
   umlClass: UMLClass;
   onDragEnd: (id: string, x: number, y: number) => void;
   onClick: (id: string) => void;
+  onTextEdit: (id: string, field: 'name' | 'attributes' | 'methods', value: string) => void;
   isSelected: boolean;
 }
 
@@ -13,8 +15,21 @@ export const UMLClassComponent: React.FC<UMLClassProps> = ({
   umlClass,
   onDragEnd,
   onClick,
+  onTextEdit,
   isSelected
 }) => {
+  const handleNameEdit = (newName: string) => {
+    onTextEdit(umlClass.id, 'name', newName);
+  };
+
+  const handleAttributesEdit = (newAttributes: string) => {
+    onTextEdit(umlClass.id, 'attributes', newAttributes);
+  };
+
+  const handleMethodsEdit = (newMethods: string) => {
+    onTextEdit(umlClass.id, 'methods', newMethods);
+  };
+
   return (
     <Group
       x={umlClass.x}
@@ -43,34 +58,39 @@ export const UMLClassComponent: React.FC<UMLClassProps> = ({
         cornerRadius={[6, 6, 0, 0]}
       />
       
-      <Text
-        text={umlClass.name}
+      <EditableText
         x={10}
         y={5}
+        width={umlClass.width - 20}
+        text={umlClass.name}
         fontSize={16}
         fontStyle="bold"
         fill="white"
-        width={umlClass.width - 20}
-        ellipsis
+        onEditEnd={handleNameEdit}
+        isEditing={umlClass.isEditing && isSelected}
       />
       
-      <Text
-        text={umlClass.attributes.join('\n')}
+      <EditableText
         x={10}
         y={40}
+        width={umlClass.width - 20}
+        text={umlClass.attributes.join('\n')}
         fontSize={14}
         fill="#374151"
-        width={umlClass.width - 20}
+        onEditEnd={handleAttributesEdit}
+        isEditing={umlClass.isEditing && isSelected}
       />
       
       {umlClass.methods.length > 0 && (
-        <Text
-          text={umlClass.methods.join('\n')}
+        <EditableText
           x={10}
           y={40 + umlClass.attributes.length * 20 + 10}
+          width={umlClass.width - 20}
+          text={umlClass.methods.join('\n')}
           fontSize={14}
           fill="#374151"
-          width={umlClass.width - 20}
+          onEditEnd={handleMethodsEdit}
+          isEditing={umlClass.isEditing && isSelected}
         />
       )}
     </Group>

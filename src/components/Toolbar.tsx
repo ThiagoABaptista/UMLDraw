@@ -1,18 +1,31 @@
 import React from 'react';
+import { Tool } from '../types/umlTypes';
 
 interface ToolbarProps {
-  tool: string;
-  onToolChange: (tool: 'select' | 'class' | 'relationship') => void;
+  tool: Tool;
+  onToolChange: (tool: Tool) => void;
+  onAddClass: () => void;
+  onToggleEdit: () => void;
+  isEditing: boolean;
+  selectedElement: string | null;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ tool, onToolChange }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({
+  tool,
+  onToolChange,
+  onAddClass,
+  onToggleEdit,
+  isEditing,
+  selectedElement
+}) => {
   return (
     <div style={{
       padding: '10px',
       backgroundColor: '#f3f4f6',
       borderBottom: '1px solid #e5e7eb',
       display: 'flex',
-      gap: '10px'
+      gap: '10px',
+      alignItems: 'center'
     }}>
       <button
         onClick={() => onToolChange('select')}
@@ -25,11 +38,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ tool, onToolChange }) => {
           cursor: 'pointer'
         }}
       >
-        Selecionar
+        ✋ Selecionar
       </button>
       
       <button
-        onClick={() => onToolChange('class')}
+        onClick={onAddClass}
         style={{
           padding: '8px 16px',
           backgroundColor: tool === 'class' ? '#3b82f6' : 'white',
@@ -39,22 +52,42 @@ export const Toolbar: React.FC<ToolbarProps> = ({ tool, onToolChange }) => {
           cursor: 'pointer'
         }}
       >
-        Adicionar Classe
+        ➕ Classe
       </button>
-      
+
       <button
-        onClick={() => onToolChange('relationship')}
+        onClick={() => onToolChange('association')}
         style={{
           padding: '8px 16px',
-          backgroundColor: tool === 'relationship' ? '#3b82f6' : 'white',
-          color: tool === 'relationship' ? 'white' : '#374151',
+          backgroundColor: tool === 'association' ? '#3b82f6' : 'white',
+          color: tool === 'association' ? 'white' : '#374151',
           border: '1px solid #d1d5db',
           borderRadius: '6px',
           cursor: 'pointer'
         }}
       >
-        Adicionar Relacionamento
+        ➡️ Associação
       </button>
+
+      {selectedElement && (
+        <button
+          onClick={onToggleEdit}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: isEditing ? '#ef4444' : '#10b981',
+            color: 'white',
+            border: '1px solid #d1d5db',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          {isEditing ? '💾 Salvar' : '✏️ Editar'}
+        </button>
+      )}
+
+      <span style={{ marginLeft: 'auto', color: '#6b7280' }}>
+        {selectedElement ? `Selecionado: ${selectedElement}` : 'Nenhum elemento selecionado'}
+      </span>
     </div>
   );
 };
