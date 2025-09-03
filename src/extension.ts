@@ -31,22 +31,41 @@ function getHtml(panel: vscode.WebviewPanel, bundleUri: vscode.Uri, nonce: strin
                style-src ${panel.webview.cspSource} 'unsafe-inline'; 
                script-src 'nonce-${nonce}';`;
 
-  return `<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="${csp}">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UMLDraw</title>
-  <style>
-    html, body, #root { height: 100%; margin: 0; padding: 0; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script nonce="${nonce}" src="${bundleUri}"></script>
-</body>
-</html>`;
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+      <meta charset="UTF-8" />
+      <meta http-equiv="Content-Security-Policy" content="${csp}">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>UMLDraw</title>
+      <style>
+        html, body, #root { 
+          height: 100%; 
+          margin: 0; 
+          padding: 0; 
+        }
+        
+        .placing-mode {
+          cursor: crosshair !important;
+        }
+        
+        body {
+          overflow: hidden;
+        }
+        
+        textarea:focus {
+          outline: none;
+          border: 2px solid #2563eb !important;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="root"></div>
+      <script nonce="${nonce}" src="${bundleUri}"></script>
+    </body>
+    </html>
+  `;
 }
 
 function getNonce() {

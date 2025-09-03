@@ -24,3 +24,4 @@ export interface UMLDiagram {
 }
 
 export type Tool = 'select' | 'class' | 'association' | 'inheritance' | 'composition' | 'aggregation';
+export type CreationState = 'idle' | 'placing' | 'connecting';

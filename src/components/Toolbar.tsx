@@ -4,20 +4,30 @@ import { Tool } from '../types/umlTypes';
 interface ToolbarProps {
   tool: Tool;
   onToolChange: (tool: Tool) => void;
-  onAddClass: () => void;
   onToggleEdit: () => void;
   isEditing: boolean;
   selectedElement: string | null;
+  creationState: 'idle' | 'placing' | 'connecting';
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
   tool,
   onToolChange,
-  onAddClass,
   onToggleEdit,
   isEditing,
-  selectedElement
+  selectedElement,
+  creationState
 }) => {
+  const getButtonStyle = (buttonTool: Tool) => ({
+    padding: '8px 16px',
+    backgroundColor: tool === buttonTool ? '#3b82f6' : 'white',
+    color: tool === buttonTool ? 'white' : '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    cursor: creationState === 'placing' ? 'default' : 'pointer',
+    opacity: creationState === 'placing' && tool !== buttonTool ? 0.5 : 1
+  });
+
   return (
     <div style={{
       padding: '10px',
@@ -29,44 +39,34 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }}>
       <button
         onClick={() => onToolChange('select')}
-        style={{
-          padding: '8px 16px',
-          backgroundColor: tool === 'select' ? '#3b82f6' : 'white',
-          color: tool === 'select' ? 'white' : '#374151',
-          border: '1px solid #d1d5db',
-          borderRadius: '6px',
-          cursor: 'pointer'
-        }}
+        style={getButtonStyle('select')}
+        disabled={creationState === 'placing'}
       >
         ✋ Selecionar
       </button>
       
       <button
-        onClick={onAddClass}
-        style={{
-          padding: '8px 16px',
-          backgroundColor: tool === 'class' ? '#3b82f6' : 'white',
-          color: tool === 'class' ? 'white' : '#374151',
-          border: '1px solid #d1d5db',
-          borderRadius: '6px',
-          cursor: 'pointer'
-        }}
+        onClick={() => onToolChange('class')}
+        style={getButtonStyle('class')}
+        disabled={creationState === 'placing'}
       >
-        ➕ Classe
+        {creationState === 'placing' ? '📍 Clique na tela...' : '➕ Classe'}
       </button>
 
       <button
         onClick={() => onToolChange('association')}
-        style={{
-          padding: '8px 16px',
-          backgroundColor: tool === 'association' ? '#3b82f6' : 'white',
-          color: tool === 'association' ? 'white' : '#374151',
-          border: '1px solid #d1d5db',
-          borderRadius: '6px',
-          cursor: 'pointer'
-        }}
+        style={getButtonStyle('association')}
+        disabled={creationState === 'placing'}
       >
         ➡️ Associação
+      </button>
+
+      <button
+        onClick={() => onToolChange('inheritance')}
+        style={getButtonStyle('inheritance')}
+        disabled={creationState === 'placing'}
+      >
+        ⬆️ Herança
       </button>
 
       {selectedElement && (
@@ -85,8 +85,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </button>
       )}
 
+      {creationState === 'placing' && (
+        <button
+          onClick={() => onToolChange('select')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#ef4444',
+            color: 'white',
+            border: '1px solid #d1d5db',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          ❌ Cancelar
+        </button>
+      )}
+
       <span style={{ marginLeft: 'auto', color: '#6b7280' }}>
-        {selectedElement ? `Selecionado: ${selectedElement}` : 'Nenhum elemento selecionado'}
+        {creationState === 'placing' ? 'Clique na tela para posicionar' : 
+         selectedElement ? `Selecionado: ${selectedElement}` : 'Nenhum elemento selecionado'}
       </span>
     </div>
   );
