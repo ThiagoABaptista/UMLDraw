@@ -30,6 +30,10 @@ export const UMLClassComponent: React.FC<UMLClassProps> = ({
     onTextEdit(umlClass.id, 'methods', newMethods);
   };
 
+  const handleEditStart = () => {
+    // Opcional: pode adicionar lógica aqui quando a edição inicia
+  };
+
   return (
     <Group
       x={umlClass.x}
@@ -66,6 +70,7 @@ export const UMLClassComponent: React.FC<UMLClassProps> = ({
         fontSize={16}
         fontStyle="bold"
         fill="white"
+        onEditStart={handleEditStart}
         onEditEnd={handleNameEdit}
         isEditing={umlClass.isEditing && isSelected}
       />
@@ -77,6 +82,7 @@ export const UMLClassComponent: React.FC<UMLClassProps> = ({
         text={umlClass.attributes.join('\n')}
         fontSize={14}
         fill="#374151"
+        onEditStart={handleEditStart}
         onEditEnd={handleAttributesEdit}
         isEditing={umlClass.isEditing && isSelected}
       />
@@ -89,6 +95,7 @@ export const UMLClassComponent: React.FC<UMLClassProps> = ({
           text={umlClass.methods.join('\n')}
           fontSize={14}
           fill="#374151"
+          onEditStart={handleEditStart}
           onEditEnd={handleMethodsEdit}
           isEditing={umlClass.isEditing && isSelected}
         />

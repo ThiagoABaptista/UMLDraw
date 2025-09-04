@@ -83,40 +83,52 @@ export default function App() {
     setSelectedElement(id);
     setIsEditing(false);
   }, [creationState]);
+  
+  const clearEditingState = useCallback(() => {
+    setDiagram(prev => ({
+      ...prev,
+      classes: prev.classes.map(cls => ({
+        ...cls,
+        isEditing: false
+      }))
+    }));
+    setIsEditing(false);
+  }, []);
 
-  const handleStageClick = useCallback((e: any) => {
-    const stage = e.target.getStage();
+ const handleStageClick = useCallback((e: any) => {
+  const stage = e.target.getStage();
+  
+  // Limpa o estado de edição ao clicar fora de qualquer elemento
+  if (e.target === stage) {
+    clearEditingState();
+  }
+  
+  // Só processa cliques no stage (não em elementos) para criação
+  if (e.target === stage && creationState === 'placing' && tool === 'class') {
+    // Cria uma nova classe na posição clicada
+    const pos = stage.getPointerPosition();
     
-    // Verifica se o clique foi no stage (não em elementos ou preview)
-    const isClickOnStage = e.target === stage;
-    const isClickOnPreview = e.target.hasName?.('preview-element');
-    
-    // Só processa cliques diretos no stage (ignora preview e outros elementos)
-    if (isClickOnStage && creationState === 'placing' && tool === 'class') {
-      // Cria uma nova classe na posição clicada
-      const pos = stage.getPointerPosition();
-      
-      const newClass: UMLClass = {
-        id: Date.now().toString(),
-        name: 'NovaClasse',
-        attributes: ['+ atributo: tipo'],
-        methods: ['+ metodo(): retorno'],
-        x: pos.x - 100, // Centraliza no clique
-        y: pos.y - 60,
-        width: 200,
-        height: 120
-      };
+    const newClass: UMLClass = {
+      id: Date.now().toString(),
+      name: 'NovaClasse',
+      attributes: ['+ atributo: tipo'],
+      methods: ['+ metodo(): retorno'],
+      x: pos.x - 100,
+      y: pos.y - 60,
+      width: 200,
+      height: 120
+    };
 
-      setDiagram(prev => ({
-        ...prev,
-        classes: [...prev.classes, newClass]
-      }));
-      
-      setSelectedElement(newClass.id);
-      setCreationState('idle');
-      setTool('select');
-    }
-  }, [creationState, tool]);
+    setDiagram(prev => ({
+      ...prev,
+      classes: [...prev.classes, newClass]
+    }));
+    
+    setSelectedElement(newClass.id);
+    setCreationState('idle');
+    setTool('select');
+  }
+}, [creationState, tool, clearEditingState]);
 
   const handleMouseMove = useCallback((e: any) => {
     const stage = e.target.getStage();
