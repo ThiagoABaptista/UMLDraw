@@ -12,9 +12,9 @@ export interface UMLClass {
 
 export interface UMLRelationship {
   id: string;
-  from: string;
-  to: string;
-  type: 'association' | 'inheritance' | 'composition' | 'aggregation';
+  from: string;       // ID do elemento de origem
+  to: string;         // ID do elemento de destino
+  type: RelationshipType;
   label?: string;
 }
 
@@ -23,5 +23,7 @@ export interface UMLDiagram {
   relationships: UMLRelationship[];
 }
 
-export type Tool = 'select' | 'class' | 'association' | 'inheritance' | 'composition' | 'aggregation';
+export type Tool = 'select' | 'class' | 'relationship';
 export type CreationState = 'idle' | 'placing' | 'connecting';
+export type RelationshipType = 'association' | 'inheritance' | 'composition' | 'aggregation' | 'dependency';
+export type ConnectionState = 'idle' | 'selecting-first' | 'selecting-second';

@@ -58,6 +58,9 @@ function getHtml(panel: vscode.WebviewPanel, bundleUri: vscode.Uri, nonce: strin
           outline: none;
           border: 2px solid #2563eb !important;
         }
+        .connecting-mode {
+          cursor: crosshair !important;
+        }
       </style>
     </head>
     <body>

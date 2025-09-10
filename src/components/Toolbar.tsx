@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool } from '../types/umlTypes';
+import { Tool, CreationState } from '../types/umlTypes';
 
 interface ToolbarProps {
   tool: Tool;
@@ -7,7 +7,8 @@ interface ToolbarProps {
   onToggleEdit: () => void;
   isEditing: boolean;
   selectedElement: string | null;
-  creationState: 'idle' | 'placing' | 'connecting';
+  creationState: CreationState;
+  connectionState: 'idle' | 'selecting-first' | 'selecting-second';
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -16,7 +17,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleEdit,
   isEditing,
   selectedElement,
-  creationState
+  creationState,
+  connectionState
 }) => {
   const getButtonStyle = (buttonTool: Tool) => ({
     padding: '8px 16px',
@@ -24,9 +26,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     color: tool === buttonTool ? 'white' : '#374151',
     border: '1px solid #d1d5db',
     borderRadius: '6px',
-    cursor: creationState === 'placing' ? 'default' : 'pointer',
-    opacity: creationState === 'placing' && tool !== buttonTool ? 0.5 : 1
+    cursor: creationState !== 'idle' ? 'default' : 'pointer',
+    opacity: creationState !== 'idle' && tool !== buttonTool ? 0.5 : 1
   });
+
+  const getConnectionText = () => {
+    if (connectionState === 'selecting-first') return 'Selecione o primeiro elemento...';
+    if (connectionState === 'selecting-second') return 'Selecione o segundo elemento...';
+    return '';
+  };
 
   return (
     <div style={{
@@ -35,12 +43,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       borderBottom: '1px solid #e5e7eb',
       display: 'flex',
       gap: '10px',
-      alignItems: 'center'
+      alignItems: 'center',
+      flexWrap: 'wrap'
     }}>
       <button
         onClick={() => onToolChange('select')}
         style={getButtonStyle('select')}
-        disabled={creationState === 'placing'}
+        disabled={creationState !== 'idle'}
       >
         ✋ Selecionar
       </button>
@@ -48,25 +57,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <button
         onClick={() => onToolChange('class')}
         style={getButtonStyle('class')}
-        disabled={creationState === 'placing'}
+        disabled={creationState !== 'idle'}
       >
         {creationState === 'placing' ? '📍 Clique na tela...' : '➕ Classe'}
       </button>
 
       <button
-        onClick={() => onToolChange('association')}
-        style={getButtonStyle('association')}
-        disabled={creationState === 'placing'}
+        onClick={() => onToolChange('relationship')}
+        style={getButtonStyle('relationship')}
+        disabled={creationState !== 'idle'}
       >
-        ➡️ Associação
-      </button>
-
-      <button
-        onClick={() => onToolChange('inheritance')}
-        style={getButtonStyle('inheritance')}
-        disabled={creationState === 'placing'}
-      >
-        ⬆️ Herança
+        {connectionState !== 'idle' ? '🔗 Conectando...' : '➡️ Associação'}
       </button>
 
       {selectedElement && (
@@ -80,12 +81,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             borderRadius: '6px',
             cursor: 'pointer'
           }}
+          disabled={connectionState !== 'idle'}
         >
           {isEditing ? '💾 Salvar' : '✏️ Editar'}
         </button>
       )}
 
-      {creationState === 'placing' && (
+      {(creationState === 'placing' || connectionState !== 'idle') && (
         <button
           onClick={() => onToolChange('select')}
           style={{
@@ -101,8 +103,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </button>
       )}
 
-      <span style={{ marginLeft: 'auto', color: '#6b7280' }}>
-        {creationState === 'placing' ? 'Clique na tela para posicionar' : 
+      <span style={{ marginLeft: 'auto', color: '#6b7280', minWidth: '200px' }}>
+        {connectionState !== 'idle' ? getConnectionText() :
+         creationState === 'placing' ? 'Clique na tela para posicionar' : 
          selectedElement ? `Selecionado: ${selectedElement}` : 'Nenhum elemento selecionado'}
       </span>
     </div>

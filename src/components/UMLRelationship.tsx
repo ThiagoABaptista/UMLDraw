@@ -1,5 +1,5 @@
 import React from 'react';
-import { Arrow, Text } from 'react-konva';
+import { Arrow, Group, Text } from 'react-konva';
 import { UMLRelationship } from '../types/umlTypes';
 
 interface UMLRelationshipProps {
@@ -46,14 +46,15 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
   const midY = (from.y + to.y) / 2;
 
   return (
-    <>
+    <Group
+      onClick={() => onClick(relationship.id)}
+      onTap={() => onClick(relationship.id)}
+    >
       <Arrow
         points={[from.x, from.y, to.x, to.y]}
         {...getArrowConfig()}
         stroke={isSelected ? "#3b82f6" : "#111827"}
         strokeWidth={isSelected ? 3 : 2}
-        onClick={() => onClick(relationship.id)}
-        onTap={() => onClick(relationship.id)}
       />
       
       {relationship.label && (
@@ -66,6 +67,6 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
           fontStyle="italic"
         />
       )}
-    </>
+    </Group>
   );
 };

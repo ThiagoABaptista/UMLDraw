@@ -3,8 +3,11 @@ import { Stage, Layer } from 'react-konva';
 import { UMLClassComponent } from '../components/UMLClass';
 import { UMLRelationshipComponent } from '../components/UMLRelationship';
 import { Toolbar } from '../components/Toolbar';
-import { UMLClass, UMLRelationship, UMLDiagram, Tool, CreationState } from '../types/umlTypes';
 import { ClassPreview } from '../components/ClassPreview';
+import { 
+  UMLClass, UMLRelationship, UMLDiagram, Tool, 
+  CreationState, ConnectionState, RelationshipType 
+} from '../types/umlTypes';
 
 const initialDiagram: UMLDiagram = {
   classes: [
@@ -45,26 +48,31 @@ export default function App() {
   const [tool, setTool] = useState<Tool>('select');
   const [isEditing, setIsEditing] = useState(false);
   const [creationState, setCreationState] = useState<CreationState>('idle');
+  const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [connectionStart, setConnectionStart] = useState<string | null>(null);
 
-  // Efeito para controlar o cursor durante o modo de colocação
+  // Efeito para controlar o cursor durante modos de criação
   useEffect(() => {
     const stageContainer = document.querySelector('.konvajs-content');
     if (stageContainer) {
       if (creationState === 'placing') {
         stageContainer.classList.add('placing-mode');
+      } else if (connectionState !== 'idle') {
+        stageContainer.classList.add('connecting-mode');
       } else {
         stageContainer.classList.remove('placing-mode');
+        stageContainer.classList.remove('connecting-mode');
       }
     }
 
-    // Cleanup function
     return () => {
       if (stageContainer) {
         stageContainer.classList.remove('placing-mode');
+        stageContainer.classList.remove('connecting-mode');
       }
     };
-  }, [creationState]);
+  }, [creationState, connectionState]);
 
   const handleClassDragEnd = useCallback((id: string, x: number, y: number) => {
     setDiagram(prev => ({
@@ -77,58 +85,81 @@ export default function App() {
 
   const handleElementClick = useCallback((id: string) => {
     if (creationState === 'placing') {
-      // Não permite selecionar elementos durante a criação
-      return;
+      return; // Não permite seleção durante criação de classes
     }
-    setSelectedElement(id);
-    setIsEditing(false);
-  }, [creationState]);
-  
-  const clearEditingState = useCallback(() => {
-    setDiagram(prev => ({
-      ...prev,
-      classes: prev.classes.map(cls => ({
-        ...cls,
-        isEditing: false
-      }))
-    }));
-    setIsEditing(false);
-  }, []);
 
- const handleStageClick = useCallback((e: any) => {
-  const stage = e.target.getStage();
-  
-  // Limpa o estado de edição ao clicar fora de qualquer elemento
-  if (e.target === stage) {
-    clearEditingState();
-  }
-  
-  // Só processa cliques no stage (não em elementos) para criação
-  if (e.target === stage && creationState === 'placing' && tool === 'class') {
-    // Cria uma nova classe na posição clicada
-    const pos = stage.getPointerPosition();
-    
-    const newClass: UMLClass = {
-      id: Date.now().toString(),
-      name: 'NovaClasse',
-      attributes: ['+ atributo: tipo'],
-      methods: ['+ metodo(): retorno'],
-      x: pos.x - 100,
-      y: pos.y - 60,
-      width: 200,
-      height: 120
-    };
+    if (connectionState === 'selecting-first') {
+      // Primeiro elemento selecionado para conexão
+      setConnectionStart(id);
+      setConnectionState('selecting-second');
+      setSelectedElement(id);
+    } 
+    else if (connectionState === 'selecting-second') {
+      // Segundo elemento selecionado - cria o relacionamento
+      if (connectionStart && connectionStart !== id) {
+        const newRelationship: UMLRelationship = {
+          id: Date.now().toString(),
+          from: connectionStart,
+          to: id,
+          type: 'association' // Tipo fixo por enquanto
+        };
 
-    setDiagram(prev => ({
-      ...prev,
-      classes: [...prev.classes, newClass]
-    }));
+        setDiagram(prev => ({
+          ...prev,
+          relationships: [...prev.relationships, newRelationship]
+        }));
+      }
+      
+      // Reseta o estado de conexão
+      setConnectionState('idle');
+      setConnectionStart(null);
+      setSelectedElement(id);
+    } 
+    else {
+      // Modo de seleção normal
+      setSelectedElement(id);
+      setIsEditing(false);
+    }
+  }, [creationState, connectionState, connectionStart]);
+
+  const handleStageClick = useCallback((e: any) => {
+    const stage = e.target.getStage();
     
-    setSelectedElement(newClass.id);
-    setCreationState('idle');
-    setTool('select');
-  }
-}, [creationState, tool, clearEditingState]);
+    if (e.target === stage) {
+      // Clicou no stage (não em elementos)
+      if (creationState === 'placing' && tool === 'class') {
+        // Cria nova classe
+        const pos = stage.getPointerPosition();
+        const newClass: UMLClass = {
+          id: Date.now().toString(),
+          name: 'NovaClasse',
+          attributes: ['+ atributo: tipo'],
+          methods: ['+ metodo(): retorno'],
+          x: pos.x - 100,
+          y: pos.y - 60,
+          width: 200,
+          height: 120
+        };
+
+        setDiagram(prev => ({
+          ...prev,
+          classes: [...prev.classes, newClass]
+        }));
+        
+        setSelectedElement(newClass.id);
+        setCreationState('idle');
+        setTool('select');
+      }
+      else if (connectionState !== 'idle') {
+        // Clicou no stage durante conexão - cancela
+        setConnectionState('idle');
+        setConnectionStart(null);
+      }
+      
+      // Limpa estado de edição
+      clearEditingState();
+    }
+  }, [creationState, tool, connectionState]);
 
   const handleMouseMove = useCallback((e: any) => {
     const stage = e.target.getStage();
@@ -157,19 +188,35 @@ export default function App() {
 
   const handleToolChange = useCallback((newTool: Tool) => {
     if (newTool === 'class') {
-      // Entra no modo de colocação para classes
+      // Modo de criação de classes
       setCreationState('placing');
+      setConnectionState('idle');
+      setConnectionStart(null);
       setTool(newTool);
       setSelectedElement(null);
       setIsEditing(false);
-    } else {
-      // Para outras ferramentas, volta ao modo normal
+    } 
+    else if (newTool === 'relationship') {
+      // Modo de criação de relacionamentos
       setCreationState('idle');
+      setConnectionState('selecting-first');
+      setConnectionStart(null);
+      setTool(newTool);
+      setSelectedElement(null);
+      setIsEditing(false);
+    } 
+    else {
+      // Modo de seleção
+      setCreationState('idle');
+      setConnectionState('idle');
+      setConnectionStart(null);
       setTool(newTool);
     }
   }, []);
 
   const handleToggleEdit = useCallback(() => {
+    if (connectionState !== 'idle') return; // Não permite editar durante conexão
+    
     setIsEditing(prev => !prev);
     if (!isEditing && selectedElement) {
       setDiagram(prev => ({
@@ -180,15 +227,20 @@ export default function App() {
         }))
       }));
     } else {
-      setDiagram(prev => ({
-        ...prev,
-        classes: prev.classes.map((cls: UMLClass) => ({
-          ...cls,
-          isEditing: false
-        }))
-      }));
+      clearEditingState();
     }
-  }, [isEditing, selectedElement]);
+  }, [isEditing, selectedElement, connectionState]);
+
+  const clearEditingState = useCallback(() => {
+    setDiagram(prev => ({
+      ...prev,
+      classes: prev.classes.map(cls => ({
+        ...cls,
+        isEditing: false
+      }))
+    }));
+    setIsEditing(false);
+  }, []);
 
   const getClassCenter = (umlClass: UMLClass) => ({
     x: umlClass.x + umlClass.width / 2,
@@ -204,6 +256,7 @@ export default function App() {
         isEditing={isEditing}
         selectedElement={selectedElement}
         creationState={creationState}
+        connectionState={connectionState}
       />
       
       <Stage 
@@ -214,13 +267,14 @@ export default function App() {
         onMouseMove={handleMouseMove}
       >
         <Layer>
-          {/* Preview visual durante a colocação - deve ser o ÚLTIMO elemento */}
+          {/* Preview visual durante a colocação de classes */}
           <ClassPreview 
             x={mousePosition.x} 
             y={mousePosition.y} 
             visible={creationState === 'placing' && tool === 'class'} 
           />
 
+          {/* Renderiza relacionamentos */}
           {diagram.relationships.map((rel: UMLRelationship) => {
             const fromClass = diagram.classes.find((c: UMLClass) => c.id === rel.from);
             const toClass = diagram.classes.find((c: UMLClass) => c.id === rel.to);
@@ -239,6 +293,7 @@ export default function App() {
             );
           })}
 
+          {/* Renderiza classes */}
           {diagram.classes.map((umlClass: UMLClass) => (
             <UMLClassComponent
               key={umlClass.id}
