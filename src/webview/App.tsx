@@ -43,7 +43,10 @@ const initialDiagram: UMLDiagram = {
 };
 
 export default function App() {
-  const [diagram, setDiagram] = useState<UMLDiagram>(initialDiagram);
+  const [diagram, setDiagram] = useState<UMLDiagram>(() => {
+    // Estado inicial pode vir de props ou ser o default
+    return initialDiagram;
+  });
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>('select');
   const [isEditing, setIsEditing] = useState(false);
@@ -54,25 +57,42 @@ export default function App() {
 
   // Efeito para controlar o cursor durante modos de criação
   useEffect(() => {
-    const stageContainer = document.querySelector('.konvajs-content');
-    if (stageContainer) {
-      if (creationState === 'placing') {
-        stageContainer.classList.add('placing-mode');
-      } else if (connectionState !== 'idle') {
-        stageContainer.classList.add('connecting-mode');
-      } else {
-        stageContainer.classList.remove('placing-mode');
-        stageContainer.classList.remove('connecting-mode');
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      
+      switch (message.command) {
+        case 'saveDiagram':
+          handleSaveToFile();
+          break;
+          
+        case 'loadDiagram':
+          if (message.diagram) {
+            setDiagram(message.diagram);
+          }
+          break;
+          
+        case 'loadInitialDiagram':
+          if (message.diagram) {
+            setDiagram(message.diagram);
+          }
+          break;
       }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    // Solicitar diagrama inicial ao carregar
+    if ((window as any).vscode) {
+      (window as any).vscode.postMessage({ 
+        command: 'requestInitialDiagram' 
+      });
     }
 
     return () => {
-      if (stageContainer) {
-        stageContainer.classList.remove('placing-mode');
-        stageContainer.classList.remove('connecting-mode');
-      }
+      window.removeEventListener('message', handleMessage);
     };
-  }, [creationState, connectionState]);
+  }, []);
+
 
   const handleClassDragEnd = useCallback((id: string, x: number, y: number) => {
     setDiagram(prev => ({
@@ -246,6 +266,95 @@ export default function App() {
     x: umlClass.x + umlClass.width / 2,
     y: umlClass.y + umlClass.height / 2
   });
+  // 👇 Funções de persistência
+  const handleSaveToFile = useCallback(() => {
+    if ((window as any).vscode) {
+      (window as any).vscode.postMessage({
+        command: 'saveToFile',
+        diagram: diagram
+      });
+    }
+  }, [diagram]);
+
+  const handleSaveToWorkspace = useCallback(() => {
+    if ((window as any).vscode) {
+      (window as any).vscode.postMessage({
+        command: 'saveToWorkspace',
+        diagram: diagram
+      });
+    }
+  }, [diagram]);
+
+  const handleSave = useCallback(() => {
+    const vsCodeApi = (window as any).vscode;
+    if (vsCodeApi) {
+      vsCodeApi.postMessage({
+        command: 'saveToFile',
+        diagram: {
+          ...diagram,
+          metadata: {
+            version: '1.0',
+            name: diagram.metadata?.name || 'Novo Diagrama',
+            created: diagram.metadata?.created || new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            type: diagram.metadata?.type || 'class'
+          }
+        }
+      });
+    } else {
+      // Fallback para desenvolvimento
+      console.log('Modo de desenvolvimento: Simulando save');
+      const dataStr = JSON.stringify(diagram, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = 'diagram.uml';
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+  }, [diagram]);
+
+  const handleLoad = useCallback(() => {
+    const vsCodeApi = (window as any).vscode;
+    if (vsCodeApi) {
+      vsCodeApi.postMessage({
+        command: 'requestLoad'
+      });
+    } else {
+      // Fallback para desenvolvimento
+      console.log('Modo de desenvolvimento: Simulando load');
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.uml,.json';
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const diagramData = JSON.parse(event.target?.result as string);
+              setDiagram(diagramData);
+            } catch (error) {
+              console.error('Erro ao carregar arquivo:', error);
+              alert('Erro ao carregar arquivo. Formato inválido.');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+      input.click();
+    }
+  }, []);
+  // 👇 Auto-save no workspace durante modificações
+  useEffect(() => {
+    const autoSaveTimer = setTimeout(() => {
+      handleSaveToWorkspace();
+    }, 2000); // Auto-save após 2 segundos de inatividade
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [diagram, handleSaveToWorkspace]);
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -253,6 +362,8 @@ export default function App() {
         tool={tool}
         onToolChange={handleToolChange}
         onToggleEdit={handleToggleEdit}
+        onSave={handleSave}
+        onLoad={handleLoad}
         isEditing={isEditing}
         selectedElement={selectedElement}
         creationState={creationState}

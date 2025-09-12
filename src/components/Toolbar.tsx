@@ -5,6 +5,8 @@ interface ToolbarProps {
   tool: Tool;
   onToolChange: (tool: Tool) => void;
   onToggleEdit: () => void;
+  onSave: () => void;
+  onLoad: () => void;
   isEditing: boolean;
   selectedElement: string | null;
   creationState: CreationState;
@@ -15,20 +17,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   tool,
   onToolChange,
   onToggleEdit,
+  onSave,
+  onLoad,
   isEditing,
   selectedElement,
   creationState,
   connectionState
 }) => {
-  const getButtonStyle = (buttonTool: Tool) => ({
-    padding: '8px 16px',
-    backgroundColor: tool === buttonTool ? '#3b82f6' : 'white',
-    color: tool === buttonTool ? 'white' : '#374151',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    cursor: creationState !== 'idle' ? 'default' : 'pointer',
-    opacity: creationState !== 'idle' && tool !== buttonTool ? 0.5 : 1
-  });
+  const getButtonClass = (buttonTool: Tool) => {
+    const baseClass = 'toolbar-button';
+    const isActive = tool === buttonTool;
+    const isDisabled = creationState !== 'idle';
+    
+    if (isActive) return `${baseClass} toolbar-button-primary`;
+    return `${baseClass} toolbar-button-secondary`;
+  };
 
   const getConnectionText = () => {
     if (connectionState === 'selecting-first') return 'Selecione o primeiro elemento...';
@@ -37,18 +40,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   };
 
   return (
-    <div style={{
-      padding: '10px',
-      backgroundColor: '#f3f4f6',
-      borderBottom: '1px solid #e5e7eb',
-      display: 'flex',
-      gap: '10px',
-      alignItems: 'center',
-      flexWrap: 'wrap'
-    }}>
+    <div className="toolbar">
       <button
         onClick={() => onToolChange('select')}
-        style={getButtonStyle('select')}
+        className={getButtonClass('select')}
         disabled={creationState !== 'idle'}
       >
         ✋ Selecionar
@@ -56,7 +51,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       
       <button
         onClick={() => onToolChange('class')}
-        style={getButtonStyle('class')}
+        className={getButtonClass('class')}
         disabled={creationState !== 'idle'}
       >
         {creationState === 'placing' ? '📍 Clique na tela...' : '➕ Classe'}
@@ -64,7 +59,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
       <button
         onClick={() => onToolChange('relationship')}
-        style={getButtonStyle('relationship')}
+        className={getButtonClass('relationship')}
         disabled={creationState !== 'idle'}
       >
         {connectionState !== 'idle' ? '🔗 Conectando...' : '➡️ Associação'}
@@ -73,37 +68,39 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       {selectedElement && (
         <button
           onClick={onToggleEdit}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: isEditing ? '#ef4444' : '#10b981',
-            color: 'white',
-            border: '1px solid #d1d5db',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
+          className="toolbar-button toolbar-button-success"
           disabled={connectionState !== 'idle'}
         >
           {isEditing ? '💾 Salvar' : '✏️ Editar'}
         </button>
       )}
 
+      <button
+        onClick={onSave}
+        className="toolbar-button toolbar-button-success"
+        disabled={connectionState !== 'idle'}
+      >
+        💾 Salvar
+      </button>
+
+      <button
+        onClick={onLoad}
+        className="toolbar-button toolbar-button-secondary"
+        disabled={connectionState !== 'idle'}
+      >
+        📂 Abrir
+      </button>
+
       {(creationState === 'placing' || connectionState !== 'idle') && (
         <button
           onClick={() => onToolChange('select')}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#ef4444',
-            color: 'white',
-            border: '1px solid #d1d5db',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
+          className="toolbar-button toolbar-button-danger"
         >
           ❌ Cancelar
         </button>
       )}
 
-      <span style={{ marginLeft: 'auto', color: '#6b7280', minWidth: '200px' }}>
+      <span className="toolbar-status">
         {connectionState !== 'idle' ? getConnectionText() :
          creationState === 'placing' ? 'Clique na tela para posicionar' : 
          selectedElement ? `Selecionado: ${selectedElement}` : 'Nenhum elemento selecionado'}

@@ -1,21 +1,15 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
   entry: './src/webview/main.tsx',
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
-    libraryTarget: 'umd',
-    globalObject: 'this'
+    path: path.resolve(__dirname, 'dist')
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    fallback: {
-      "process": require.resolve("process/browser"),
-      "buffer": require.resolve("buffer/"),
-      "util": require.resolve("util/")
-    }
+    extensions: ['.ts', '.tsx', '.js', '.jsx']
   },
   module: {
     rules: [
@@ -23,17 +17,24 @@ module.exports = {
         test: /\.tsx?$/,
         use: 'ts-loader',
         exclude: /node_modules/
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
       }
     ]
   },
   plugins: [
     new webpack.ProvidePlugin({
       process: 'process/browser',
-      Buffer: ['buffer', 'Buffer'],
     }),
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('production'),
-      'process.browser': true
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'src/webview/styles.css',
+          to: 'styles.css'
+        }
+      ]
     })
   ],
   mode: 'development',

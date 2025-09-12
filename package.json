@@ -14,13 +14,33 @@
     "onCommand:umlDraw.start"
   ],
   "main": "./out/extension.js",
-  "contributes": {
+   "contributes": {
     "commands": [
       {
         "command": "umlDraw.start",
         "title": "UMLDraw: Abrir editor"
+      },
+      {
+        "command": "umlDraw.save",
+        "title": "UMLDraw: Salvar diagrama"
+      },
+      {
+        "command": "umlDraw.load",
+        "title": "UMLDraw: Carregar diagrama"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "umlDraw.save",
+          "when": "umlDrawEditorActive"
+        },
+        {
+          "command": "umlDraw.load",
+          "when": "umlDrawEditorActive"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile": "tsc -p .",
@@ -38,7 +58,10 @@
     "@types/vscode": "^1.84.0",
     "@vscode/vsce": "^2.15.0",
     "buffer": "^6.0.3",
+    "copy-webpack-plugin": "^13.0.1",
+    "css-loader": "^7.1.2",
     "process": "^0.11.10",
+    "style-loader": "^4.0.0",
     "ts-loader": "^9.4.0",
     "typescript": "^5.0.0",
     "util": "^0.12.5",
