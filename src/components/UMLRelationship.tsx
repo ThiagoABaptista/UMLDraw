@@ -1,6 +1,6 @@
 import React from 'react';
 import { Arrow, Group, Text } from 'react-konva';
-import { UMLRelationship } from '../types/umlTypes';
+import { UMLRelationship, RelationshipType } from '../types/umlTypes';
 
 interface UMLRelationshipProps {
   relationship: UMLRelationship;
@@ -8,6 +8,7 @@ interface UMLRelationshipProps {
   to: { x: number; y: number };
   isSelected: boolean;
   onClick: (id: string) => void;
+  diagramType: 'usecase' | 'activity'; // Adicione esta linha
 }
 
 export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
@@ -15,22 +16,32 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
   from,
   to,
   isSelected,
-  onClick
+  onClick,
+  diagramType // Adicione esta linha
 }) => {
   const getArrowConfig = () => {
+    if (diagramType === 'activity') {
+      return { 
+        pointerLength: 10, 
+        pointerWidth: 10, 
+        fill: '#111827'
+      };
+    }
+
     switch (relationship.type) {
-      case 'inheritance':
+      case 'include':
+      case 'extend':
         return { 
-          pointerLength: 15, 
-          pointerWidth: 15, 
+          pointerLength: 10, 
+          pointerWidth: 10, 
           fill: '#111827',
-          dash: [10, 5] 
+          dash: [5, 5]
         };
-      case 'composition':
+      case 'generalization':
         return { 
           pointerLength: 15, 
           pointerWidth: 15, 
-          fill: '#111827' 
+          fill: '#111827'
         };
       default:
         return { 
@@ -41,7 +52,6 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
     }
   };
 
-  // Calcula o ponto médio para posicionar o label
   const midX = (from.x + to.x) / 2;
   const midY = (from.y + to.y) / 2;
 

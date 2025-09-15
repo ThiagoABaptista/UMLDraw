@@ -212,3 +212,39 @@ textarea:focus {
 .operation-warning {
   border: 2px solid #f59e0b !important;
 }
+
+.toolbar-button-export {
+  background-color: #8b5cf6 !important;
+  color: white !important;
+}
+
+.toolbar-button-export:hover:not(:disabled) {
+  background-color: #7c3aed !important;
+  transform: translateY(-1px);
+}
+
+.toolbar-button-export:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading states para exportação */
+.exporting {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.exporting::after {
+  content: ' ⏳';
+}
+
+/* Success animation */
+@keyframes exportSuccess {
+  0% { background-color: #8b5cf6; }
+  50% { background-color: #10b981; }
+  100% { background-color: #8b5cf6; }
+}
+
+.export-success {
+  animation: exportSuccess 2s ease-in-out;
+}

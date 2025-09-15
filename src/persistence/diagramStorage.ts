@@ -21,7 +21,7 @@ export class DiagramStorage {
 
       const diagramFile: DiagramFile = {
         metadata: diagram.metadata || this.createDefaultMetadata(),
-        elements: diagram.classes,
+        elements: diagram.elements, // Mudou de 'classes' para 'elements'
         relationships: diagram.relationships,
         viewport: { scale: 1, offset: { x: 0, y: 0 } }
       };
@@ -50,11 +50,8 @@ export class DiagramStorage {
       const fileData = await vscode.workspace.fs.readFile(uris[0]);
       const diagramFile: DiagramFile = JSON.parse(fileData.toString());
       
-      return {
-        metadata: diagramFile.metadata,
-        classes: diagramFile.elements,
-        relationships: diagramFile.relationships
-      };
+      // Migração de diagramas antigos
+      return this.migrateDiagram(diagramFile);
     } catch (error) {
       vscode.window.showErrorMessage('Erro ao carregar diagrama: ' + error);
       return null;
@@ -126,12 +123,31 @@ export class DiagramStorage {
       name: 'Novo Diagrama',
       created: new Date().toISOString(),
       lastModified: new Date().toISOString(),
-      type: 'class'
+      type: 'usecase' // Mudou de 'class' para 'usecase'
     };
   }
 
   private isRecent(timestamp: number): boolean {
     // Considera válido por 24 horas
     return Date.now() - timestamp < 24 * 60 * 60 * 1000;
+  }
+
+  // Migração de diagramas antigos (com classes) para o novo formato
+  private migrateDiagram(diagramFile: DiagramFile): UMLDiagram {
+    // Se for um diagrama antigo com classes, converte para o novo formato
+    if ((diagramFile as any).classes) {
+      return {
+        metadata: diagramFile.metadata || this.createDefaultMetadata(),
+        elements: (diagramFile as any).classes || [],
+        relationships: diagramFile.relationships || []
+      };
+    }
+    
+    // Se já estiver no formato novo, retorna como está
+    return {
+      metadata: diagramFile.metadata || this.createDefaultMetadata(),
+      elements: diagramFile.elements || [],
+      relationships: diagramFile.relationships || []
+    };
   }
 }

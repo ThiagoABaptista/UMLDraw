@@ -2,7 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
-// Declaração global para o vscode
 declare global {
   interface Window {
     vscode?: {
@@ -12,27 +11,35 @@ declare global {
   }
 }
 
-// Polyfill para desenvolvimento
 const initializeVSCodeAPI = () => {
-  if (typeof window.acquireVsCodeApi !== 'undefined') {
+  if (typeof window !== 'undefined' && typeof (window as any).acquireVsCodeApi !== 'undefined') {
     try {
-      const vscodeApi = window.acquireVsCodeApi();
-      window.vscode = vscodeApi;
+      const vscodeApi = (window as any).acquireVsCodeApi();
+      (window as any).vscode = vscodeApi;
+      console.log('VS Code API inicializada com sucesso');
     } catch (error) {
       console.log('Erro ao inicializar VS Code API:', error);
-      window.vscode = undefined;
+      (window as any).vscode = undefined;
     }
   } else {
     console.log('Modo de desenvolvimento: VS Code API não disponível');
-    window.vscode = undefined;
+    (window as any).vscode = undefined;
   }
 };
 
 // Inicializa a API
 initializeVSCodeAPI();
 
+console.log('Aplicação iniciando...');
+
 const container = document.getElementById('root');
 if (!container) throw new Error('Root container not found');
 
-const root = createRoot(container);
-root.render(<App />);
+try {
+  const root = createRoot(container);
+  root.render(<App />);
+  console.log('React aplicado com sucesso');
+} catch (error) {
+  console.error('Erro ao renderizar React:', error);
+  document.body.innerHTML = '<div style="padding: 20px; color: red;">Erro ao carregar a aplicação. Verifique o console.</div>';
+}

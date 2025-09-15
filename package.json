@@ -14,7 +14,7 @@
     "onCommand:umlDraw.start"
   ],
   "main": "./out/extension.js",
-   "contributes": {
+  "contributes": {
     "commands": [
       {
         "command": "umlDraw.start",
@@ -27,6 +27,14 @@
       {
         "command": "umlDraw.load",
         "title": "UMLDraw: Carregar diagrama"
+      },
+      {
+        "command": "umlDraw.exportPNG",
+        "title": "UMLDraw: Exportar como PNG"
+      },
+      {
+        "command": "umlDraw.exportPDF",
+        "title": "UMLDraw: Exportar como PDF"
       }
     ],
     "menus": {
@@ -37,6 +45,14 @@
         },
         {
           "command": "umlDraw.load",
+          "when": "umlDrawEditorActive"
+        },
+        {
+          "command": "umlDraw.exportPNG",
+          "when": "umlDrawEditorActive"
+        },
+        {
+          "command": "umlDraw.exportPDF",
           "when": "umlDrawEditorActive"
         }
       ]
@@ -69,6 +85,9 @@
     "webpack-cli": "^5.1.0"
   },
   "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.2",
+    "jspdf-autotable": "^5.0.2",
     "konva": "^9.3.22",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

@@ -1,8 +1,18 @@
-export interface UMLClass {
+export interface UseCaseElement {
   id: string;
+  type: 'actor' | 'usecase' | 'system';
   name: string;
-  attributes: string[];
-  methods: string[];
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isEditing?: boolean;
+}
+
+export interface ActivityElement {
+  id: string;
+  type: 'start' | 'end' | 'activity' | 'decision' | 'merge' | 'fork' | 'join';
+  name: string;
   x: number;
   y: number;
   width: number;
@@ -19,8 +29,8 @@ export interface UMLRelationship {
 }
 
 export interface UMLDiagram {
-  metadata?: DiagramMetadata;
-  classes: UMLClass[];
+  metadata: DiagramMetadata;
+  elements: (UseCaseElement | ActivityElement)[];
   relationships: UMLRelationship[];
 }
 
@@ -29,17 +39,17 @@ export interface DiagramMetadata {
   name: string;
   created: string;
   lastModified: string;
-  type: 'class' | 'usecase' | 'sequence';
+  type: 'usecase' | 'activity';
 }
 
 export interface DiagramFile {
   metadata: DiagramMetadata;
-  elements: UMLClass[];
+  elements: (UseCaseElement | ActivityElement)[];
   relationships: UMLRelationship[];
   viewport?: { scale: number; offset: { x: number; y: number } };
 }
 
-export type Tool = 'select' | 'class' | 'relationship';
-export type CreationState = 'idle' | 'placing' | 'connecting';
+export type Tool = 'select' | 'actor' | 'usecase' | 'activity' | 'decision' | 'relationship';
+export type CreationState = 'idle' | 'placing';
 export type ConnectionState = 'idle' | 'selecting-first' | 'selecting-second';
-export type RelationshipType = 'association' | 'inheritance' | 'composition' | 'aggregation' | 'dependency';
+export type RelationshipType = 'association' | 'include' | 'extend' | 'generalization' | 'flow';

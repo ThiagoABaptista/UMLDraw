@@ -1,15 +1,13 @@
 const path = require('path');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const webpack = require('webpack');
 
 module.exports = {
   entry: './src/webview/main.tsx',
   output: {
-    filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist')
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js'
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx']
+    extensions: ['.tsx', '.ts', '.js']
   },
   module: {
     rules: [
@@ -24,19 +22,11 @@ module.exports = {
       }
     ]
   },
-  plugins: [
-    new webpack.ProvidePlugin({
-      process: 'process/browser',
-    }),
-    new CopyWebpackPlugin({
-      patterns: [
-        {
-          from: 'src/webview/styles.css',
-          to: 'styles.css'
-        }
-      ]
-    })
-  ],
-  mode: 'development',
-  devtool: 'inline-source-map'
+  externals: {
+    // Configura as dependências como externas para serem carregadas via CDN
+    'html2canvas': 'html2canvas',
+    'jspdf': 'jspdf',
+    'jspdf-autotable': 'jspdf-autotable'
+  },
+  devtool: 'source-map'
 };

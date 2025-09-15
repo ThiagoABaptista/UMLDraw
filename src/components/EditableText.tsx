@@ -13,6 +13,7 @@ interface EditableTextProps {
   onEditStart?: () => void;
   onEditEnd: (newText: string) => void;
   isEditing?: boolean;
+  align?: 'left' | 'center' | 'right';
 }
 
 export const EditableText: React.FC<EditableTextProps> = ({
@@ -26,7 +27,8 @@ export const EditableText: React.FC<EditableTextProps> = ({
   backgroundColor = 'white',
   onEditStart,
   onEditEnd,
-  isEditing = false
+  isEditing = false,
+  align = 'left'
 }) => {
   const [isEditingInternal, setIsEditing] = useState(isEditing);
   const [currentText, setCurrentText] = useState(text);
@@ -189,6 +191,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
         width={width}
         onDblClick={handleDblClick}
         onTap={handleDblClick}
+        align={align || 'left'}
       />
     </Group>
   );
