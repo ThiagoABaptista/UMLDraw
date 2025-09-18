@@ -121,7 +121,7 @@ function getNonce() {
 }
 
 function getHtml(panel: vscode.WebviewPanel, bundleUri: vscode.Uri, cssUri: vscode.Uri, nonce: string) {
-  const csp = `default-src 'none'; style-src ${panel.webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' https:;`;
+  const csp = `default-src 'none'; style-src ${panel.webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${panel.webview.cspSource} data:;`;
 
   return `
     <!DOCTYPE html>
@@ -132,34 +132,9 @@ function getHtml(panel: vscode.WebviewPanel, bundleUri: vscode.Uri, cssUri: vsco
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>UMLDraw</title>
       <link href="${cssUri}" rel="stylesheet">
-      
-      <!-- Carrega as dependências externas via CDN -->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     </head>
     <body>
-      <div id="root">
-        <div style="padding: 20px; text-align: center; color: #666;">
-          <div style="font-size: 24px; margin-bottom: 10px;">⏳</div>
-          <div>Carregando UMLDraw...</div>
-        </div>
-      </div>
-      <script nonce="${nonce}">
-        console.log('Inicializando webview...');
-        
-        // Configura as variáveis globais para as dependências
-        window.html2canvas = html2canvas;
-        window.jspdf = jspdf;
-        
-        const vscode = acquireVsCodeApi ? acquireVsCodeApi() : undefined;
-        if (vscode) {
-          window.vscode = vscode;
-          console.log('VS Code API adquirida');
-        } else {
-          console.log('Modo de desenvolvimento: VS Code API não disponível');
-        }
-      </script>
+      <div id="root"></div>
       <script nonce="${nonce}" src="${bundleUri}"></script>
     </body>
     </html>

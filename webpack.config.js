@@ -1,13 +1,15 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/webview/main.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js'
+    filename: 'bundle.js',
+    clean: true // Limpa o diretório de output antes de cada build
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js']
+    extensions: ['.tsx', '.ts', '.js', '.jsx']
   },
   plugins: [
     new CopyWebpackPlugin({
@@ -15,7 +17,10 @@ module.exports = {
         {
           from: 'src/assets/icons',
           to: 'assets/icons',
-          noErrorOnMissing: true
+          noErrorOnMissing: true,
+          globOptions: {
+            ignore: ['**/.gitkeep'] // Ignora arquivos vazios se houver
+          }
         },
         {
           from: 'src/assets/images',
