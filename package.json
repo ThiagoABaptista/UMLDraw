@@ -89,6 +89,7 @@
     "jspdf": "^3.0.2",
     "jspdf-autotable": "^5.0.2",
     "konva": "^9.3.22",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-konva": "^19.0.7"

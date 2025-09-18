@@ -83,8 +83,17 @@ export const EditableText: React.FC<EditableTextProps> = ({
       textarea.style.fontStyle = fontStyle;
       textarea.style.background = backgroundColor;
       textarea.style.color = textColor;
+      textarea.style.padding = `${4 * scale}px ${6 * scale}px`;
+      textarea.style.border = `1px solid #9ca3af`; // cinza neutro
+      textarea.style.borderRadius = `${4 * scale}px`;
+      textarea.style.outline = 'none';
+      textarea.style.resize = 'none';
+      textarea.style.lineHeight = '1.4';
+      textarea.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
+      textarea.style.transition = 'all 0.15s ease';
+      textarea.style.fontFamily = `'Inter', sans-serif`;
       textarea.value = currentText;
-      
+            
       document.body.appendChild(textarea);
       
       // Configura os event listeners

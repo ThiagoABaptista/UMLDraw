@@ -1,7 +1,10 @@
 import React from 'react';
-import { Group, Rect, Circle, Text } from 'react-konva';
+import { Group, Rect, Path } from 'react-konva';
 import { EditableText } from './EditableText';
 import { UseCaseElement } from '../types/umlTypes';
+
+// Lucide path
+const USER_PATH = "M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.33 0-8 2.17-8 5v3h16v-3c0-2.83-3.67-5-8-5z";
 
 interface UseCaseComponentProps {
   element: UseCaseElement;
@@ -22,79 +25,45 @@ export const UseCaseComponent: React.FC<UseCaseComponentProps> = ({
     onTextEdit(element.id, newName);
   };
 
-  const handleEditStart = () => {
-    // Lógica opcional quando a edição inicia
-  };
-
   const renderActor = () => (
-    <Group>
-      {/* Corpo do ator */}
-      <Circle
-        x={element.width / 2}
-        y={20}
-        radius={15}
-        fill="#3b82f6"
-        stroke={isSelected ? "#2563eb" : "#1d4ed8"}
-        strokeWidth={isSelected ? 3 : 2}
-      />
-      
-      {/* Corpo */}
-      <Rect
-        x={element.width / 2 - 20}
-        y={35}
-        width={40}
-        height={40}
-        fill="#3b82f6"
-        stroke={isSelected ? "#2563eb" : "#1d4ed8"}
-        strokeWidth={isSelected ? 3 : 2}
-      />
-      
-      {/* Pernas */}
-      <Rect
-        x={element.width / 2 - 15}
-        y={75}
-        width={30}
-        height={25}
-        fill="#3b82f6"
-        stroke={isSelected ? "#2563eb" : "#1d4ed8"}
-        strokeWidth={isSelected ? 3 : 2}
-      />
-    </Group>
+    <Path
+      data={USER_PATH}
+      x={element.width / 2 - 14}
+      y={0}
+      scale={{ x: 1.5, y: 1.5 }}
+      fill={isSelected ? "#2563eb" : "#1d4ed8"}
+      stroke={isSelected ? "#2563eb" : "#1d4ed8"}
+      strokeWidth={1.5}
+    />
   );
 
   const renderUseCase = () => (
-    <Group>
-      {/* Elipse do caso de uso */}
-      <Rect
-        width={element.width}
-        height={element.height}
-        fill="#dbeafe"
-        stroke={isSelected ? "#3b82f6" : "#111827"}
-        strokeWidth={isSelected ? 3 : 2}
-        cornerRadius={element.height / 2}
-        shadowColor={isSelected ? "#3b82f6" : undefined}
-        shadowBlur={isSelected ? 10 : 0}
-        shadowOpacity={isSelected ? 0.3 : 0}
-      />
-    </Group>
+    <Rect
+      width={element.width}
+      height={element.height}
+      fill="#dbeafe"
+      stroke={isSelected ? "#3b82f6" : "#1e3a8a"}
+      strokeWidth={isSelected ? 3 : 2}
+      cornerRadius={element.height / 2}
+      shadowColor={isSelected ? "#3b82f6" : undefined}
+      shadowBlur={isSelected ? 10 : 0}
+      shadowOpacity={isSelected ? 0.25 : 0}
+    />
   );
 
   const renderSystem = () => (
-    <Group>
-      {/* Retângulo do sistema */}
-      <Rect
-        width={element.width}
-        height={element.height}
-        fill="#f0f9ff"
-        stroke={isSelected ? "#0ea5e9" : "#0369a1"}
-        strokeWidth={isSelected ? 3 : 2}
-        cornerRadius={8}
-        dash={[5, 5]}
-        shadowColor={isSelected ? "#0ea5e9" : undefined}
-        shadowBlur={isSelected ? 10 : 0}
-        shadowOpacity={isSelected ? 0.3 : 0}
-      />
-    </Group>
+    <Rect
+      width={element.width}
+      height={element.height}
+      fill="#f0f9ff"
+      stroke={isSelected ? "#0ea5e9" : "#0369a1"}
+      strokeWidth={isSelected ? 3 : 2}
+      cornerRadius={8}
+      dash={[5, 5]}
+      shadowColor={isSelected ? "#0ea5e9" : undefined}
+      shadowBlur={isSelected ? 10 : 0}
+      shadowOpacity={isSelected ? 0.25 : 0}
+    />
   );
 
   return (
@@ -112,17 +81,15 @@ export const UseCaseComponent: React.FC<UseCaseComponentProps> = ({
       
       <EditableText
         x={10}
-        y={element.type === 'actor' ? element.height + 5 : element.height / 2 - 10}
+        y={element.type === 'actor' ? element.height + 10 : element.height / 2 - 10}
         width={element.width - 20}
         text={element.name}
         fontSize={element.type === 'actor' ? 12 : 14}
-        fontStyle={element.type === 'actor' ? 'normal' : 'normal'}
-        fill={element.type === 'actor' ? '#374151' : '#111827'}
-        backgroundColor={element.type === 'actor' ? 'transparent' : 'transparent'}
-        onEditStart={handleEditStart}
+        fill="#111827"
+        backgroundColor="transparent"
         onEditEnd={handleEdit}
         isEditing={element.isEditing && isSelected}
-        align={element.type === 'actor' ? 'center' : 'center'}
+        align="center"
       />
     </Group>
   );

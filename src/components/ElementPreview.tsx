@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Rect, Circle, Text } from 'react-konva';
+import { Group, Rect, Circle, Path } from 'react-konva';
 import { Tool } from '../types/umlTypes';
 
 interface ElementPreviewProps {
@@ -10,6 +10,9 @@ interface ElementPreviewProps {
   diagramType: 'usecase' | 'activity';
 }
 
+// Lucide paths
+const USER_PATH = "M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.33 0-8 2.17-8 5v3h16v-3c0-2.83-3.67-5-8-5z";
+
 export const ElementPreview: React.FC<ElementPreviewProps> = ({ 
   x, y, visible, tool, diagramType 
 }) => {
@@ -19,11 +22,10 @@ export const ElementPreview: React.FC<ElementPreviewProps> = ({
     if (diagramType === 'usecase') {
       return {
         width: tool === 'actor' ? 60 : 120,
-        height: tool === 'actor' ? 100 : 60,
+        height: tool === 'actor' ? 60 : 60,
         type: tool
       };
     } else {
-      // Para diagrama de atividade, tratamos todas as ferramentas possíveis
       const widths: Record<string, number> = {
         activity: 120,
         decision: 80,
@@ -55,11 +57,15 @@ export const ElementPreview: React.FC<ElementPreviewProps> = ({
   const renderUseCasePreview = () => {
     if (tool === 'actor') {
       return (
-        <Group>
-          <Circle x={config.width / 2} y={20} radius={15} fill="#93c5fd" stroke="#3b82f6" strokeWidth={1} />
-          <Rect x={config.width / 2 - 20} y={35} width={40} height={40} fill="#93c5fd" stroke="#3b82f6" strokeWidth={1} />
-          <Rect x={config.width / 2 - 15} y={75} width={30} height={25} fill="#93c5fd" stroke="#3b82f6" strokeWidth={1} />
-        </Group>
+        <Path
+          data={USER_PATH}
+          x={config.width / 2 - 12}
+          y={config.height / 2 - 12}
+          scale={{ x: 1.2, y: 1.2 }}
+          fill="#2563eb"
+          stroke="#1d4ed8"
+          strokeWidth={1.5}
+        />
       );
     } else {
       return (
@@ -68,16 +74,17 @@ export const ElementPreview: React.FC<ElementPreviewProps> = ({
           height={config.height}
           fill="#bfdbfe"
           stroke="#3b82f6"
-          strokeWidth={1}
+          strokeWidth={1.5}
           cornerRadius={config.height / 2}
-          dash={[4, 4]}
+          shadowColor="#3b82f6"
+          shadowBlur={6}
+          shadowOpacity={0.2}
         />
       );
     }
   };
 
   const renderActivityPreview = () => {
-    // Use type assertion para garantir que o TypeScript entenda o contexto
     const activityTool = tool as 'activity' | 'decision' | 'start' | 'end' | 'fork' | 'join' | 'merge';
     
     if (activityTool === 'activity') {
@@ -85,11 +92,10 @@ export const ElementPreview: React.FC<ElementPreviewProps> = ({
         <Rect
           width={config.width}
           height={config.height}
-          fill="#fde68a"
-          stroke="#f59e0b"
-          strokeWidth={1}
-          cornerRadius={8}
-          dash={[4, 4]}
+          fill="#e0f2fe"
+          stroke="#0284c7"
+          strokeWidth={1.5}
+          cornerRadius={6}
         />
       );
     } else if (activityTool === 'decision') {
@@ -97,25 +103,34 @@ export const ElementPreview: React.FC<ElementPreviewProps> = ({
         <Rect
           width={config.width}
           height={config.height}
-          fill="#fde68a"
-          stroke="#f59e0b"
-          strokeWidth={1}
+          fill="#fef9c3"
+          stroke="#d97706"
+          strokeWidth={1.5}
           rotation={45}
           offsetX={config.width / 2}
           offsetY={config.height / 2}
-          dash={[4, 4]}
         />
       );
-    } else if (activityTool === 'start' || activityTool === 'end') {
+    } else if (activityTool === 'start') {
       return (
         <Circle
           x={config.width / 2}
           y={config.height / 2}
           radius={config.width / 2}
-          fill={activityTool === 'start' ? "#86efac" : "#fca5a5"}
-          stroke={activityTool === 'start' ? "#10b981" : "#ef4444"}
-          strokeWidth={1}
-          dash={[4, 4]}
+          fill="#22c55e"
+          stroke="#16a34a"
+          strokeWidth={1.5}
+        />
+      );
+    } else if (activityTool === 'end') {
+      return (
+        <Circle
+          x={config.width / 2}
+          y={config.height / 2}
+          radius={config.width / 2}
+          fill="#dc2626"
+          stroke="#991b1b"
+          strokeWidth={1.5}
         />
       );
     } else {
@@ -123,10 +138,9 @@ export const ElementPreview: React.FC<ElementPreviewProps> = ({
         <Rect
           width={config.width}
           height={config.height}
-          fill="#e5e7eb"
-          stroke="#6b7280"
-          strokeWidth={1}
-          dash={[4, 4]}
+          fill="#111827"
+          stroke="#374151"
+          strokeWidth={1.5}
         />
       );
     }

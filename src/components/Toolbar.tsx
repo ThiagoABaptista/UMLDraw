@@ -1,4 +1,8 @@
 import React from 'react';
+import {
+  User, Circle, Square, Diamond, ArrowRight, MousePointer,
+  Save, Edit, FileDown, FolderOpen, X, Image as ImageIcon
+} from 'lucide-react';
 import { Tool, CreationState } from '../types/umlTypes';
 
 interface ToolbarProps {
@@ -35,8 +39,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const getButtonClass = (buttonTool: Tool) => {
     const baseClass = 'toolbar-button';
     const isActive = tool === buttonTool;
-    const isDisabled = creationState !== 'idle';
-    
     if (isActive) return `${baseClass} toolbar-button-primary`;
     return `${baseClass} toolbar-button-secondary`;
   };
@@ -57,6 +59,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       relationship: 'Relacionamento'
     };
     return names[toolType];
+  };
+
+  const getButtonIcon = (tool: Tool): JSX.Element => {
+    const icons: Record<Tool, JSX.Element> = {
+      select: <MousePointer size={16} />,
+      actor: <User size={16} />,
+      usecase: <Circle size={16} />,
+      activity: <Square size={16} />,
+      decision: <Diamond size={16} />,
+      relationship: <ArrowRight size={16} />,
+    };
+    return icons[tool];
   };
 
   const getAvailableTools = (): Tool[] => {
@@ -83,7 +97,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </select>
       </div>
 
-      {/* Ferramentas do Diagrama */}
+      {/* Ferramentas */}
       <div className="toolbar-section">
         <span className="toolbar-label">Ferramentas:</span>
         {getAvailableTools().map((availableTool) => (
@@ -94,9 +108,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             disabled={creationState !== 'idle' && tool !== availableTool}
             title={getToolName(availableTool)}
           >
-            {creationState === 'placing' && tool === availableTool ? 
-              `📍 ${getToolName(availableTool)}...` : 
-              getButtonIcon(availableTool) + ' ' + getToolName(availableTool)}
+            {getButtonIcon(availableTool)}
+            <span>{getToolName(availableTool)}</span>
           </button>
         ))}
       </div>
@@ -111,44 +124,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             disabled={connectionState !== 'idle'}
             title="Editar elemento"
           >
-            {isEditing ? '💾 Salvar' : '✏️ Editar'}
+            {isEditing ? <Save size={16}/> : <Edit size={16}/>}
+            <span>{isEditing ? 'Salvar' : 'Editar'}</span>
           </button>
         )}
 
-        <button
-          onClick={onSave}
-          className="toolbar-button toolbar-button-success"
-          disabled={connectionState !== 'idle'}
-          title="Salvar diagrama"
-        >
-          💾 Salvar
+        <button onClick={onSave} className="toolbar-button toolbar-button-success" disabled={connectionState !== 'idle'}>
+          <Save size={16}/> <span>Salvar</span>
         </button>
 
-        <button
-          onClick={onLoad}
-          className="toolbar-button toolbar-button-secondary"
-          disabled={connectionState !== 'idle'}
-          title="Abrir diagrama"
-        >
-          📂 Abrir
+        <button onClick={onLoad} className="toolbar-button toolbar-button-secondary" disabled={connectionState !== 'idle'}>
+          <FolderOpen size={16}/> <span>Abrir</span>
         </button>
 
-        <button
-          onClick={onExportPNG}
-          className="toolbar-button toolbar-button-export"
-          disabled={connectionState !== 'idle'}
-          title="Exportar como PNG"
-        >
-          🖼️ PNG
+        <button onClick={onExportPNG} className="toolbar-button toolbar-button-export" disabled={connectionState !== 'idle'}>
+          <ImageIcon size={16}/> <span>PNG</span>
         </button>
 
-        <button
-          onClick={onExportPDF}
-          className="toolbar-button toolbar-button-export"
-          disabled={connectionState !== 'idle'}
-          title="Exportar como PDF"
-        >
-          📄 PDF
+        <button onClick={onExportPDF} className="toolbar-button toolbar-button-export" disabled={connectionState !== 'idle'}>
+          <FileDown size={16}/> <span>PDF</span>
         </button>
       </div>
 
@@ -164,27 +158,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
       {/* Cancelar */}
       {(creationState === 'placing' || connectionState !== 'idle') && (
-        <button
-          onClick={() => onToolChange('select')}
-          className="toolbar-button toolbar-button-danger"
-          title="Cancelar operação"
-        >
-          ❌ Cancelar
+        <button onClick={() => onToolChange('select')} className="toolbar-button toolbar-button-danger" title="Cancelar operação">
+          <X size={16}/> <span>Cancelar</span>
         </button>
       )}
     </div>
   );
-};
-
-// Helper para ícones das ferramentas
-const getButtonIcon = (tool: Tool): string => {
-  const icons = {
-    select: '✋',
-    actor: '👤',
-    usecase: '○',
-    activity: '▭',
-    decision: '◇',
-    relationship: '➡️'
-  };
-  return icons[tool];
 };

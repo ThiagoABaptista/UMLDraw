@@ -8,7 +8,7 @@ interface UMLRelationshipProps {
   to: { x: number; y: number };
   isSelected: boolean;
   onClick: (id: string) => void;
-  diagramType: 'usecase' | 'activity'; // Adicione esta linha
+  diagramType: 'usecase' | 'activity';
 }
 
 export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
@@ -17,7 +17,7 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
   to,
   isSelected,
   onClick,
-  diagramType // Adicione esta linha
+  diagramType
 }) => {
   const getArrowConfig = () => {
     if (diagramType === 'activity') {

@@ -9,6 +9,22 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js']
   },
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'src/assets/icons',
+          to: 'assets/icons',
+          noErrorOnMissing: true
+        },
+        {
+          from: 'src/assets/images',
+          to: 'assets/images',
+          noErrorOnMissing: true
+        }
+      ]
+    })
+  ],
   module: {
     rules: [
       {
@@ -19,6 +35,13 @@ module.exports = {
       {
         test: /\.css$/,
         use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.(svg|png|jpg|gif)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[hash][ext][query]'
+        }
       }
     ]
   },

@@ -1,7 +1,11 @@
 import React from 'react';
-import { Group, Rect, Circle, Text } from 'react-konva';
+import { Group, Rect, Circle, Path } from 'react-konva';
 import { EditableText } from './EditableText';
 import { ActivityElement } from '../types/umlTypes';
+
+// SVG paths do Lucide (https://lucide.dev/icons)
+const PLAY_PATH = "M6 4l20 12-20 12V4z";
+const CIRCLEDOT_PATH = "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 13a3 3 0 1 1 0-6 3 3 0 0 1 0 6z";
 
 interface ActivityComponentProps {
   element: ActivityElement;
@@ -22,40 +26,34 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
     onTextEdit(element.id, newName);
   };
 
-  const handleEditStart = () => {
-    // Lógica opcional quando a edição inicia
-  };
-
   const renderActivity = () => (
     <Rect
       width={element.width}
       height={element.height}
-      fill="#fef3c7"
-      stroke={isSelected ? "#f59e0b" : "#d97706"}
+      fill="#e0f2fe"
+      stroke={isSelected ? "#0284c7" : "#0369a1"}
       strokeWidth={isSelected ? 3 : 2}
-      cornerRadius={8}
-      shadowColor={isSelected ? "#f59e0b" : undefined}
-      shadowBlur={isSelected ? 10 : 0}
-      shadowOpacity={isSelected ? 0.3 : 0}
+      cornerRadius={6}
+      shadowColor={isSelected ? "#38bdf8" : undefined}
+      shadowBlur={isSelected ? 8 : 0}
+      shadowOpacity={isSelected ? 0.25 : 0}
     />
   );
 
   const renderDecision = () => (
-    <Group>
-      <Rect
-        width={element.width}
-        height={element.height}
-        fill="#fef3c7"
-        stroke={isSelected ? "#f59e0b" : "#d97706"}
-        strokeWidth={isSelected ? 3 : 2}
-        rotation={45}
-        offsetX={element.width / 2}
-        offsetY={element.height / 2}
-        shadowColor={isSelected ? "#f59e0b" : undefined}
-        shadowBlur={isSelected ? 10 : 0}
-        shadowOpacity={isSelected ? 0.3 : 0}
-      />
-    </Group>
+    <Rect
+      width={element.width}
+      height={element.height}
+      fill="#fef9c3"
+      stroke={isSelected ? "#f59e0b" : "#d97706"}
+      strokeWidth={isSelected ? 3 : 2}
+      rotation={45}
+      offsetX={element.width / 2}
+      offsetY={element.height / 2}
+      shadowColor={isSelected ? "#fbbf24" : undefined}
+      shadowBlur={isSelected ? 8 : 0}
+      shadowOpacity={isSelected ? 0.25 : 0}
+    />
   );
 
   const renderStartEnd = () => (
@@ -63,12 +61,12 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
       x={element.width / 2}
       y={element.height / 2}
       radius={element.width / 2}
-      fill={element.type === 'start' ? "#10b981" : "#ef4444"}
-      stroke={isSelected ? (element.type === 'start' ? "#059669" : "#dc2626") : (element.type === 'start' ? "#047857" : "#b91c1c")}
+      fill={element.type === 'start' ? "#22c55e" : "#dc2626"}
+      stroke={isSelected ? (element.type === 'start' ? "#16a34a" : "#991b1b") : (element.type === 'start' ? "#047857" : "#7f1d1d")}
       strokeWidth={isSelected ? 3 : 2}
-      shadowColor={isSelected ? (element.type === 'start' ? "#10b981" : "#ef4444") : undefined}
-      shadowBlur={isSelected ? 10 : 0}
-      shadowOpacity={isSelected ? 0.3 : 0}
+      shadowColor={isSelected ? (element.type === 'start' ? "#22c55e" : "#dc2626") : undefined}
+      shadowBlur={isSelected ? 8 : 0}
+      shadowOpacity={isSelected ? 0.25 : 0}
     />
   );
 
@@ -76,12 +74,12 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
     <Rect
       width={element.width}
       height={element.height}
-      fill="#d1d5db"
-      stroke={isSelected ? "#6b7280" : "#4b5563"}
+      fill="#111827"
+      stroke={isSelected ? "#6b7280" : "#374151"}
       strokeWidth={isSelected ? 3 : 2}
       shadowColor={isSelected ? "#6b7280" : undefined}
-      shadowBlur={isSelected ? 10 : 0}
-      shadowOpacity={isSelected ? 0.3 : 0}
+      shadowBlur={isSelected ? 6 : 0}
+      shadowOpacity={isSelected ? 0.2 : 0}
     />
   );
 
@@ -105,10 +103,9 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
           y={element.height / 2 - 10}
           width={element.width - 20}
           text={element.name}
-          fontSize={12}
+          fontSize={14}
           fill="#111827"
           backgroundColor="transparent"
-          onEditStart={handleEditStart}
           onEditEnd={handleEdit}
           isEditing={element.isEditing && isSelected}
           align="center"
@@ -116,25 +113,23 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
       )}
       
       {element.type === 'start' && (
-        <Text
-          x={element.width / 2 - 5}
-          y={element.height / 2 - 8}
-          text="▶"
-          fontSize={16}
+        <Path
+          data={PLAY_PATH}
+          x={element.width / 2 - 8}
+          y={element.height / 2 - 10}
+          scale={{ x: 0.6, y: 0.6 }}
           fill="white"
-          align="center"
           listening={false}
         />
       )}
       
       {element.type === 'end' && (
-        <Text
-          x={element.width / 2 - 8}
+        <Path
+          data={CIRCLEDOT_PATH}
+          x={element.width / 2 - 10}
           y={element.height / 2 - 10}
-          text="●"
-          fontSize={20}
+          scale={{ x: 0.7, y: 0.7 }}
           fill="white"
-          align="center"
           listening={false}
         />
       )}

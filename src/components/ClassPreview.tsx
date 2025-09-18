@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Rect, Text } from 'react-konva';
+import { Group, Rect, Text, Line } from 'react-konva';
 
 interface ClassPreviewProps {
   x: number;
@@ -12,62 +12,26 @@ export const ClassPreview: React.FC<ClassPreviewProps> = ({ x, y, visible }) => 
 
   return (
     <Group
-      x={x - 100} // Centraliza no cursor
+      x={x - 100}
       y={y - 60}
-      opacity={0.7}
-      name="preview-element" // Nome para identificar que é um preview
-      listening={false} // Isto é IMPORTANTE: faz o preview ignorar eventos de mouse
+      opacity={0.8}
+      name="preview-element"
+      listening={false}
     >
-      <Rect
-        width={200}
-        height={120}
-        fill="#dbeafe"
-        stroke="#3b82f6"
-        strokeWidth={2}
-        cornerRadius={6}
-        dash={[5, 5]}
-        listening={false} // Também desativa eventos nos elementos filhos
-      />
+      <Rect width={200} height={120} fill="#ffffff" stroke="#111827" strokeWidth={1.5} cornerRadius={4} />
       
-      <Rect
-        width={200}
-        height={30}
-        fill="#3b82f6"
-        cornerRadius={[6, 6, 0, 0]}
-        opacity={0.7}
-        listening={false}
-      />
-      
-      <Text
-        text="NovaClasse"
-        x={10}
-        y={5}
-        fontSize={16}
-        fontStyle="bold"
-        fill="white"
-        width={180}
-        listening={false}
-      />
-      
-      <Text
-        text="+ atributo: tipo"
-        x={10}
-        y={40}
-        fontSize={14}
-        fill="#374151"
-        width={180}
-        listening={false}
-      />
-      
-      <Text
-        text="+ metodo(): retorno"
-        x={10}
-        y={60}
-        fontSize={14}
-        fill="#374151"
-        width={180}
-        listening={false}
-      />
+      {/* Divisórias UML */}
+      <Line points={[0, 30, 200, 30]} stroke="#111827" strokeWidth={1} />
+      <Line points={[0, 70, 200, 70]} stroke="#111827" strokeWidth={1} />
+
+      {/* Nome da classe */}
+      <Text text="NovaClasse" x={10} y={8} fontSize={16} fontStyle="bold" fill="#111827" width={180} />
+
+      {/* Atributos */}
+      <Text text="+ atributo: Tipo" x={10} y={40} fontSize={14} fill="#374151" width={180} />
+
+      {/* Métodos */}
+      <Text text="+ metodo(): Retorno" x={10} y={80} fontSize={14} fill="#374151" width={180} />
     </Group>
   );
 };
