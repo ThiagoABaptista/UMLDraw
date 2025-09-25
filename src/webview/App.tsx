@@ -10,7 +10,7 @@ import { useDiagramOperations } from '../hooks/useDiagramOperations';
 import { useVSCodeCommunication } from '../hooks/useVSCodeCommunication';
 import { useStageInteractions } from '../hooks/useStageInteractions';
 import { ExportService } from '../services/exportService';
-import { UseCaseElement, ActivityElement } from '../types/umlTypes';
+import { UseCaseElement, ActivityElement, UMLDiagram } from '../types/umlTypes';
 
 export default function App() {
   const [diagramType, setDiagramType] = useState<'usecase' | 'activity'>('usecase');
@@ -104,6 +104,9 @@ export default function App() {
     return ['start', 'end', 'activity', 'decision', 'fork', 'join', 'merge'].includes(element.type);
   };
 
+  // CORREÇÃO: Função para verificar se a ferramenta é de elemento (não select/relationship)
+  const shouldShowPreview = diagramState.creationState === 'placing';
+
   const handleDiagramTypeChange = (type: 'usecase' | 'activity') => {
     setDiagramType(type);
     diagramState.setDiagram({
@@ -117,6 +120,21 @@ export default function App() {
       elements: [],
       relationships: []
     });
+  };
+
+  const handleElementDragMove = (element: UseCaseElement | ActivityElement, e: any) => {
+    const updatedElement = {
+      ...element,
+      x: e.target.x(),
+      y: e.target.y()
+    };
+
+    diagramState.updateDiagram((prev: UMLDiagram) => ({
+      ...prev,
+      elements: prev.elements.map(el => 
+        el.id === element.id ? updatedElement : el
+      )
+    }));
   };
 
   return (
@@ -145,13 +163,15 @@ export default function App() {
         onMouseMove={(e) => stageInteractions.handleMouseMove(e, setMousePosition)}
       >
         <Layer>
-          <ElementPreview 
-            x={mousePosition.x} 
-            y={mousePosition.y} 
-            visible={diagramState.creationState === 'placing' && diagramState.tool !== 'select' && diagramState.tool !== 'relationship'}
-            tool={diagramState.tool}
-            diagramType={diagramType}
-          />
+          {shouldShowPreview && (
+            <ElementPreview 
+              tool={diagramState.tool}
+              x={mousePosition.x - 20} // Centralizar no cursor
+              y={mousePosition.y - 20}
+              size={40}
+              visible={true}
+            />
+          )}
 
           {diagramState.diagram.relationships.map((rel) => {
             const fromElement = diagramState.diagram.elements.find(e => e.id === rel.from);
@@ -172,7 +192,7 @@ export default function App() {
             );
           })}
 
-          {diagramState.diagram.elements.map((element) => {
+         {diagramState.diagram.elements.map((element) => {
             if (diagramType === 'usecase' && isUseCaseElement(element)) {
               return (
                 <UseCaseComponent

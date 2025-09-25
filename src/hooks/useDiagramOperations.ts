@@ -44,155 +44,187 @@ export const useDiagramOperations = (
 
     const handleElementDragEnd = useCallback((id: string, x: number, y: number) => {
         updateDiagram((prev: UMLDiagram) => ({
-        ...prev,
-        elements: prev.elements.map((element: UseCaseElement | ActivityElement) =>
-            element.id === id ? { ...element, x, y } : element
-        )
+            ...prev,
+            elements: prev.elements.map((element: UseCaseElement | ActivityElement) =>
+                element.id === id ? { ...element, x, y } : element
+            )
         }));
     }, [updateDiagram]);
 
     const handleElementClick = useCallback((id: string) => {
-        if (creationState === 'placing') return;
-
-        if (connectionState === 'selecting-first') {
-        setConnectionStart(id);
-        setConnectionState('selecting-second');
-        setSelectedElement(id);
-        } else if (connectionState === 'selecting-second') {
-        if (connectionStart && connectionStart !== id) {
-            const newRelationship = createNewRelationship(connectionStart, id);
-            updateDiagram((prev: UMLDiagram) => ({
-            ...prev,
-            relationships: [...prev.relationships, newRelationship]
-            }));
+        // Se está no meio de uma colocação, ignorar o clique (deve clicar no stage para colocar)
+        if (creationState === 'placing') {
+            return;
         }
-        setConnectionState('idle');
-        setConnectionStart(null);
-        setSelectedElement(id);
+
+        // Lógica de conexão
+        if (connectionState === 'selecting-first') {
+            setConnectionStart(id);
+            setConnectionState('selecting-second');
+            setSelectedElement(id);
+        } else if (connectionState === 'selecting-second') {
+            if (connectionStart && connectionStart !== id) {
+                const newRelationship = createNewRelationship(connectionStart, id);
+                updateDiagram((prev: UMLDiagram) => ({
+                    ...prev,
+                    relationships: [...prev.relationships, newRelationship]
+                }));
+            }
+            setConnectionState('idle');
+            setConnectionStart(null);
+            setSelectedElement(id);
         } else {
-        setSelectedElement(id);
-        setIsEditing(false);
+            // Seleção normal de elemento
+            setSelectedElement(id);
+            setIsEditing(false);
         }
     }, [creationState, connectionState, connectionStart, setConnectionStart, setConnectionState, setSelectedElement, setIsEditing, updateDiagram]);
 
+    const handleStageClick = useCallback(() => {
+        // Click no stage vazio - desselecionar elemento atual
+        setSelectedElement(null);
+        setIsEditing(false);
+        
+        // Se estava no meio de uma colocação, criar o elemento
+        if (creationState === 'placing') {
+            setCreationState('idle');
+        }
+        
+        // Se estava no meio de uma conexão, cancelar
+        if (connectionState !== 'idle') {
+            setConnectionState('idle');
+            setConnectionStart(null);
+        }
+    }, [creationState, connectionState, setSelectedElement, setIsEditing, setCreationState, setConnectionState, setConnectionStart]);
+
     const handleTextEdit = useCallback((id: string, value: string) => {
         updateDiagram((prev: UMLDiagram) => ({
-        ...prev,
-        elements: prev.elements.map((element: UseCaseElement | ActivityElement) =>
-            element.id === id ? { ...element, name: value } : element
-        )
+            ...prev,
+            elements: prev.elements.map((element: UseCaseElement | ActivityElement) =>
+                element.id === id ? { ...element, name: value } : element
+            )
         }));
         setIsEditing(false);
     }, [updateDiagram, setIsEditing]);
 
     const handleToolChange = useCallback((newTool: Tool) => {
-        if (newTool === 'relationship') {
+        // Cancela qualquer operação em andamento
         setCreationState('idle');
-        setConnectionState('selecting-first');
-        setConnectionStart(null);
-        setTool(newTool);
-        setSelectedElement(null);
-        setIsEditing(false);
-        } else {
-        setCreationState('placing');
         setConnectionState('idle');
         setConnectionStart(null);
+        
+        // Muda para a nova ferramenta
         setTool(newTool);
         setSelectedElement(null);
         setIsEditing(false);
+        
+        // Se é uma ferramenta de elemento (não relationship), entra em modo de colocação
+        if (newTool !== 'relationship') {
+            setCreationState('placing');
+        } else {
+            // Se é relationship, entra em modo de conexão
+            setConnectionState('selecting-first');
         }
     }, [setCreationState, setConnectionState, setConnectionStart, setTool, setSelectedElement, setIsEditing]);
 
     const handleToggleEdit = useCallback(() => {
-        if (connectionState !== 'idle') return;
+        // Só permite editar se não há operações em andamento e há um elemento selecionado
+        const hasActiveOperation = connectionState !== 'idle' || creationState === 'placing';
+        
+        if (hasActiveOperation || !selectedElement) return;
         
         setIsEditing(!isEditing);
         
-        if (!isEditing && selectedElement) {
+        if (!isEditing) {
+            // Entrando no modo edição
             updateDiagram((prev: UMLDiagram) => ({
-            ...prev,
-            elements: prev.elements.map((element: UseCaseElement | ActivityElement) => ({
-                ...element,
-                isEditing: element.id === selectedElement
-            }))
+                ...prev,
+                elements: prev.elements.map((element: UseCaseElement | ActivityElement) => ({
+                    ...element,
+                    isEditing: element.id === selectedElement
+                }))
             }));
         } else {
+            // Saindo do modo edição
             clearEditingState();
         }
-    }, [connectionState, isEditing, selectedElement, setIsEditing, updateDiagram, clearEditingState]);
+    }, [connectionState, creationState, isEditing, selectedElement, setIsEditing, updateDiagram, clearEditingState]);
 
     const createNewElement = useCallback((tool: Tool, x: number, y: number): UseCaseElement | ActivityElement => {
         const baseElement = {
-        id: Date.now().toString(),
-        name: getDefaultName(tool),
-        x: x - 40,
-        y: y - 30,
-        width: 80,
-        height: 60,
-        isEditing: false
+            id: Date.now().toString(),
+            name: getDefaultName(tool),
+            x: x - 40,
+            y: y - 30,
+            width: 80,
+            height: 60,
+            isEditing: false
         };
 
         if (diagramType === 'usecase') {
-        return {
-            ...baseElement,
-            type: tool === 'actor' ? 'actor' : 'usecase',
-            width: tool === 'actor' ? 60 : 120,
-            height: tool === 'actor' ? 100 : 60
-        } as UseCaseElement;
+            return {
+                ...baseElement,
+                type: tool === 'actor' ? 'actor' : 'usecase',
+                width: tool === 'actor' ? 60 : 120,
+                height: tool === 'actor' ? 100 : 60
+            } as UseCaseElement;
         } else {
-        return {
-            ...baseElement,
-            type: tool as ActivityElement['type'],
-            width: getActivityElementWidth(tool),
-            height: getActivityElementHeight(tool)
-        } as ActivityElement;
+            return {
+                ...baseElement,
+                type: tool as ActivityElement['type'],
+                width: getActivityElementWidth(tool),
+                height: getActivityElementHeight(tool)
+            } as ActivityElement;
         }
     }, [diagramType]);
 
     const createNewRelationship = useCallback((from: string, to: string): UMLRelationship => {
         return {
-        id: Date.now().toString(),
-        from,
-        to,
-        type: diagramType === 'activity' ? 'flow' : 'association'
+            id: Date.now().toString(),
+            from,
+            to,
+            type: diagramType === 'activity' ? 'flow' : 'association'
         };
     }, [diagramType]);
 
     // Funções auxiliares
     const getDefaultName = (tool: Tool): string => {
         const names: Record<string, string> = {
-        actor: 'Ator',
-        usecase: 'Caso de Uso',
-        activity: 'Atividade',
-        decision: 'Decisão',
-        start: 'Início',
-        end: 'Fim'
+            actor: 'Ator',
+            usecase: 'Caso de Uso',
+            activity: 'Atividade',
+            decision: 'Decisão',
+            start: 'Início',
+            end: 'Fim',
+            fork: 'Fork',
+            join: 'Join',
+            merge: 'Merge'
         };
         return names[tool] || 'Elemento';
     };
 
     const getActivityElementWidth = (tool: Tool): number => {
         const widths: Record<string, number> = {
-        activity: 120,
-        decision: 80,
-        start: 40,
-        end: 40,
-        fork: 20,
-        join: 20,
-        merge: 20
+            activity: 120,
+            decision: 80,
+            start: 40,
+            end: 40,
+            fork: 20,
+            join: 20,
+            merge: 80
         };
         return widths[tool] || 80;
     };
 
     const getActivityElementHeight = (tool: Tool): number => {
         const heights: Record<string, number> = {
-        activity: 60,
-        decision: 60,
-        start: 40,
-        end: 40,
-        fork: 80,
-        join: 80,
-        merge: 20
+            activity: 60,
+            decision: 60,
+            start: 40,
+            end: 40,
+            fork: 80,
+            join: 80,
+            merge: 60
         };
         return heights[tool] || 60;
     };
@@ -200,6 +232,7 @@ export const useDiagramOperations = (
     return {
         handleElementDragEnd,
         handleElementClick,
+        handleStageClick,
         handleTextEdit,
         handleToolChange,
         handleToggleEdit,

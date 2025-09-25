@@ -9,7 +9,10 @@ module.exports = {
     clean: true // Limpa o diretório de output antes de cada build
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.jsx']
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
+    extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
   },
   plugins: [
     new CopyWebpackPlugin({
@@ -42,10 +45,21 @@ module.exports = {
         use: ['style-loader', 'css-loader']
       },
       {
-        test: /\.(svg|png|jpg|gif)$/,
+        test: /\.svg$/,
+        use: [
+          {
+            loader: 'raw-loader',
+            options: {
+              esModule: false,
+            }
+          }
+        ]
+      },
+      {
+        test: /\.(png|jpg|gif)$/i,
         type: 'asset/resource',
         generator: {
-          filename: 'assets/[hash][ext][query]'
+          filename: 'assets/images/[hash][ext][query]'
         }
       }
     ]

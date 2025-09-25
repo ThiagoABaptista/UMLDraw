@@ -49,7 +49,18 @@ export interface DiagramFile {
   viewport?: { scale: number; offset: { x: number; y: number } };
 }
 
-export type Tool = 'select' | 'actor' | 'usecase' | 'activity' | 'decision' | 'relationship';
+export type Tool =
+  | "select"
+  | "actor"
+  | "usecase"
+  | "relationship"
+  | "activity"
+  | "decision"
+  | "start"
+  | "end"
+  | "fork"
+  | "join"
+  | "merge";
 export type CreationState = 'idle' | 'placing';
 export type ConnectionState = 'idle' | 'selecting-first' | 'selecting-second';
 export type RelationshipType = 'association' | 'include' | 'extend' | 'generalization' | 'flow';
