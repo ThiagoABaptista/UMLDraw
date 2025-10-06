@@ -23,28 +23,64 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
     onTextEdit(element.id, newName);
   };
 
+  const getTextPosition = () => {
+    switch (element.type) {
+      case "activity":
+        return {
+          x: 10,
+          y: element.height + 6, // texto fora do ícone
+          width: element.width - 20,
+          showText: true,
+        };
+      case "decision":
+        return {
+          x: 0,
+          y: element.height + 6,
+          width: element.width,
+          showText: false, // geralmente não mostra texto interno
+        };
+      case "start":
+      case "end":
+      case "fork":
+      case "join":
+      case "merge":
+        return { x: 0, y: 0, width: 0, showText: false };
+      default:
+        return {
+          x: 0,
+          y: element.height + 6,
+          width: element.width,
+          showText: true,
+        };
+    }
+  };
+
+  const textPos = getTextPosition();
+
   return (
     <Group
       x={element.x}
       y={element.y}
       draggable
-      onDragEnd={(e) => onDragEnd(element.id, e.target.x(), e.target.y())}
+      onDragEnd={(e) => {
+        onDragEnd(element.id, e.target.x(), e.target.y());
+      }}
       onClick={() => onClick(element.id)}
-      onTap={() => onClick(element.id)}
     >
-      <GaphorIcon 
+      <GaphorIcon
         element={element}
         x={0}
         y={0}
         width={element.width}
         height={element.height}
+        isSelected={isSelected}
       />
 
-      {(element.type === "activity" || element.type === "decision") && (
+      {textPos.showText && (
         <EditableText
-          x={10}
-          y={element.height / 2 - 10}
-          width={element.width - 20}
+          x={textPos.x}
+          y={textPos.y}
+          width={textPos.width}
           text={element.name}
           fontSize={12}
           fill="#111827"

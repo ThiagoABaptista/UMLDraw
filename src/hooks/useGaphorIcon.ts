@@ -1,11 +1,10 @@
 // src/hooks/useGaphorIcon.ts
 import { useState, useEffect } from 'react';
 import { Canvg } from 'canvg';
-import { getSvgContent } from '../utils/iconMapping';
-import { umlSvgContent } from '../utils/iconMapping';
+import { umlSvgContent, ElementType } from '../utils/iconMapping';
 
 interface UseGaphorIconProps {
-  elementType: string;
+  elementType: ElementType;
   width?: number;
   height?: number;
   color?: string;
@@ -20,7 +19,7 @@ export const useGaphorIcon = ({
   width = 40,
   height = 40,
   color = '#374151',
-  scale = 1
+  scale = 2
 }: UseGaphorIconProps) => {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,16 +27,13 @@ export const useGaphorIcon = ({
 
   useEffect(() => {
     let isMounted = true;
-    const loadIcon = () => {
-      try {
-        if (!isMounted) return;
 
+    const loadIcon = async () => {
+      try {
         setLoading(true);
         setError(null);
 
-        // Verifica se já existe no cache
         const cacheKey = `${elementType}-${width}-${height}-${color}-${scale}`;
-        
         if (imageCache.has(cacheKey)) {
           if (isMounted) {
             setImage(imageCache.get(cacheKey)!);
@@ -46,33 +42,20 @@ export const useGaphorIcon = ({
           return;
         }
 
-        // Carrega o conteúdo SVG 
-        // const svgContent = getSvgContent(elementType);
         const svgContent = umlSvgContent[elementType];
+        if (!svgContent) {
+          throw new Error(`SVG not found for element type: ${elementType}`);
+        }
 
-        console.log('SVG para', elementType, svgContent);
-
-        
-        // Personaliza a cor
         const customizedSvg = customizeSvgColor(svgContent, color);
-        
-        // Converte SVG para imagem
-        convertSvgToImage(customizedSvg, width, height, scale)
-          .then((img) => {
-            if (isMounted) {
-              imageCache.set(cacheKey, img);
-              setImage(img);
-              setLoading(false);
-            }
-          })
-          .catch((err) => {
-            if (isMounted) {
-              console.error('Error converting SVG to image:', err);
-              setError(err instanceof Error ? err.message : 'Unknown error');
-              setLoading(false);
-            }
-          });
 
+        const img = await convertSvgToImage(customizedSvg, width, height, scale);
+
+        if (isMounted) {
+          imageCache.set(cacheKey, img);
+          setImage(img);
+          setLoading(false);
+        }
       } catch (err) {
         if (isMounted) {
           console.error('Error in useGaphorIcon:', err);
@@ -83,7 +66,6 @@ export const useGaphorIcon = ({
     };
 
     loadIcon();
-
     return () => {
       isMounted = false;
     };
@@ -92,7 +74,7 @@ export const useGaphorIcon = ({
   return { image, loading, error };
 };
 
-// Função para converter SVG para Image
+// 🔹 Converte SVG para imagem rasterizada em alta resolução
 const convertSvgToImage = (
   svgContent: string,
   width: number,
@@ -111,6 +93,7 @@ const convertSvgToImage = (
     try {
       const v = await Canvg.fromString(ctx, svgContent);
       await v.render();
+
       const img = new window.Image();
       img.onload = () => resolve(img);
       img.onerror = reject;
@@ -121,7 +104,7 @@ const convertSvgToImage = (
   });
 };
 
-// Função para personalizar a cor do SVG
+// 🔹 Substitui a cor do SVG dinamicamente
 const customizeSvgColor = (svgContent: string, color: string): string => {
   return svgContent
     .replace(/#000000/g, color)

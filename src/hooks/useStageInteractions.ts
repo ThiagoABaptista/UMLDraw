@@ -13,6 +13,7 @@ interface StageInteractionsProps {
     setConnectionState: (state: ConnectionState) => void;
     setConnectionStart: (id: string | null) => void;
     clearEditingState: () => void;
+    onMousePositionChange?: (pos: { x: number; y: number }) => void;
 }
 
 export const useStageInteractions = (props: StageInteractionsProps) => {
@@ -27,39 +28,44 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
         setTool,
         setConnectionState,
         setConnectionStart,
-        clearEditingState
+        clearEditingState,
+        onMousePositionChange
     } = props;
 
     const handleStageClick = useCallback((e: any) => {
         const stage = e.target.getStage();
         
         if (e.target === stage) {
-        if (creationState === 'placing' && tool !== 'select' && tool !== 'relationship') {
-            const pos = stage.getPointerPosition();
-            const newElement = createNewElement(tool, pos.x, pos.y);
-            
-            updateDiagram((prev: UMLDiagram) => ({
-            ...prev,
-            elements: [...prev.elements, newElement]
-            }));
-            
-            setSelectedElement(newElement.id);
-            setCreationState('idle');
-            setTool('select');
-        }
-        else if (connectionState !== 'idle') {
-            setConnectionState('idle');
-            setConnectionStart(null);
-        }
-        clearEditingState();
+            if (creationState === 'placing' && tool !== 'select' && tool !== 'relationship') {
+                const pos = stage.getPointerPosition();
+                
+                const newElement = createNewElement(tool, pos.x, pos.y);
+                
+                updateDiagram((prev: UMLDiagram) => ({
+                    ...prev,
+                    elements: [...prev.elements, newElement]
+                }));
+                
+                setSelectedElement(newElement.id);
+                setCreationState('idle');
+                setTool('select');
+            }
+            else if (connectionState !== 'idle') {
+                setConnectionState('idle');
+                setConnectionStart(null);
+            }
+            clearEditingState();
         }
     }, [creationState, tool, connectionState, createNewElement, updateDiagram, setSelectedElement, setCreationState, setTool, setConnectionState, setConnectionStart, clearEditingState]);
 
-    const handleMouseMove = useCallback((e: any, setMousePosition: (pos: { x: number; y: number }) => void) => {
+    const handleMouseMove = useCallback((e: any) => {
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
-        setMousePosition(pos);
-    }, []);
+        
+        if (onMousePositionChange) {
+            onMousePositionChange(pos);
+        }
+    }, [onMousePositionChange]);
 
     return {
         handleStageClick,

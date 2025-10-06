@@ -1,23 +1,26 @@
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+
+/*
 declare global {
   interface Window {
     html2canvas: any;
     jspdf: any;
   }
 }
+*/
 
 export class ExportService {
   // Exportar para PNG
   static async exportToPNG(element: HTMLElement, filename: string = 'diagram.png'): Promise<void> {
     try {
-      if (!window.html2canvas) {
-        throw new Error('html2canvas não está disponível');
-      }
-
-      const canvas = await window.html2canvas(element, {
+      const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
-        useCORS: true
+        useCORS: true,
+        allowTaint: true
       });
 
       const link = document.createElement('a');
@@ -33,28 +36,31 @@ export class ExportService {
   // Exportar para PDF
   static async exportToPDF(element: HTMLElement, filename: string = 'diagram.pdf'): Promise<void> {
     try {
-      if (!window.html2canvas || !window.jspdf) {
-        throw new Error('Dependências de exportação não estão disponíveis');
-      }
-
-      const canvas = await window.html2canvas(element, {
+      const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
-        useCORS: true
+        useCORS: true,
+        allowTaint: true
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new window.jspdf.jsPDF({
+      const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4'
       });
 
-      const imgWidth = 280;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = pageWidth - 20; // Margem de 10mm cada lado
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      // Se a imagem for muito alta, ajusta
+      const finalHeight = imgHeight > pageHeight - 20 ? pageHeight - 20 : imgHeight;
+
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, finalHeight);
       pdf.save(filename);
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
@@ -62,25 +68,22 @@ export class ExportService {
     }
   }
 
-  // Exportar para PDF com metadados
+  // Exportar para PDF com metadados (simplificado)
   static async exportToPDFAdvanced(
     element: HTMLElement, 
     diagramData: any, 
     filename: string = 'diagram.pdf'
   ): Promise<void> {
     try {
-      if (!window.html2canvas || !window.jspdf) {
-        throw new Error('Dependências de exportação não estão disponíveis');
-      }
-
-      const canvas = await window.html2canvas(element, {
+      const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
-        useCORS: true
+        useCORS: true,
+        allowTaint: true
       });
 
-      const pdf = new window.jspdf.jsPDF({
+      const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4'
@@ -97,42 +100,11 @@ export class ExportService {
 
       // Adiciona imagem do diagrama
       const imgData = canvas.toDataURL('image/png');
-      const imgWidth = 280;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pageWidth - 20;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-
-      // Adiciona página de metadados
-      pdf.addPage();
-      pdf.setFontSize(16);
-      pdf.text('Metadados do Diagrama', 20, 20);
-      
-      pdf.setFontSize(12);
-      const metadata = [
-        ['Nome:', diagramData.metadata?.name || 'N/A'],
-        ['Tipo:', diagramData.metadata?.type || 'N/A'],
-        ['Criado:', diagramData.metadata?.created ? new Date(diagramData.metadata.created).toLocaleString() : 'N/A'],
-        ['Modificado:', diagramData.metadata?.lastModified ? new Date(diagramData.metadata.lastModified).toLocaleString() : 'N/A'],
-        ['Elementos:', diagramData.elements.length.toString()],
-        ['Relacionamentos:', diagramData.relationships.length.toString()]
-      ];
-
-      // Usa autotable se disponível
-      if ((window.jspdf as any).autoTable) {
-        (window.jspdf as any).autoTable({
-          startY: 30,
-          head: [['Propriedade', 'Valor']],
-          body: metadata,
-          theme: 'grid'
-        });
-      } else {
-        // Fallback manual
-        let y = 30;
-        metadata.forEach(([prop, value]) => {
-          pdf.text(`${prop} ${value}`, 20, y);
-          y += 10;
-        });
-      }
-
       pdf.save(filename);
     } catch (error) {
       console.error('Erro ao exportar PDF avançado:', error);
@@ -140,18 +112,15 @@ export class ExportService {
     }
   }
 
-  // Exportar para SVG (opcional)
+  // Exportar para SVG
   static async exportToSVG(element: HTMLElement, filename: string = 'diagram.svg'): Promise<void> {
     try {
-      if (!window.html2canvas) {
-        throw new Error('html2canvas não está disponível');
-      }
-
-      const canvas = await window.html2canvas(element, {
+      const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
-        useCORS: true
+        useCORS: true,
+        allowTaint: true
       });
 
       const imgData = canvas.toDataURL('image/png');

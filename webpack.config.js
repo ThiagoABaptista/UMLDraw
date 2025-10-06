@@ -64,11 +64,5 @@ module.exports = {
       }
     ]
   },
-  externals: {
-    // Configura as dependências como externas para serem carregadas via CDN
-    'html2canvas': 'html2canvas',
-    'jspdf': 'jspdf',
-    'jspdf-autotable': 'jspdf-autotable'
-  },
   devtool: 'source-map'
 };

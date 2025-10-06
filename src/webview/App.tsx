@@ -66,10 +66,12 @@ export default function App() {
   // Funções de exportação
   const handleExportPNG = async () => {
     try {
-      const stageContainer = document.querySelector('.konvajs-content');
+      const stageContainer = document.querySelector('.konvajs-content') as HTMLElement;
       if (stageContainer) {
-        await ExportService.exportToPNG(stageContainer as HTMLElement, `diagrama-${diagramType}.png`);
+        await ExportService.exportToPNG(stageContainer, `diagrama-${diagramType}.png`);
         vsCodeComm.showMessage('info', 'Diagrama exportado como PNG com sucesso!');
+      } else {
+        throw new Error('Container do diagrama não encontrado');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -79,10 +81,12 @@ export default function App() {
 
   const handleExportPDF = async () => {
     try {
-      const stageContainer = document.querySelector('.konvajs-content');
+      const stageContainer = document.querySelector('.konvajs-content') as HTMLElement;
       if (stageContainer) {
-        await ExportService.exportToPDF(stageContainer as HTMLElement, `diagrama-${diagramType}.pdf`);
+        await ExportService.exportToPDF(stageContainer, `diagrama-${diagramType}.pdf`);
         vsCodeComm.showMessage('info', 'Diagrama exportado como PDF com sucesso!');
+      } else {
+        throw new Error('Container do diagrama não encontrado');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -90,14 +94,13 @@ export default function App() {
     }
   };
 
-  // Funções auxiliares
   const getElementCenter = (element: UseCaseElement | ActivityElement) => ({
     x: element.x + element.width / 2,
     y: element.y + element.height / 2
   });
 
   const isUseCaseElement = (element: UseCaseElement | ActivityElement): element is UseCaseElement => {
-    return element.type === 'actor' || element.type === 'usecase' || element.type === 'system';
+    return element.type === 'actor' || element.type === 'usecase';
   };
 
   const isActivityElement = (element: UseCaseElement | ActivityElement): element is ActivityElement => {
@@ -160,7 +163,16 @@ export default function App() {
         height={window.innerHeight - 50}
         onClick={stageInteractions.handleStageClick}
         onTap={stageInteractions.handleStageClick}
-        onMouseMove={(e) => stageInteractions.handleMouseMove(e, setMousePosition)}
+        onMouseMove={(e) => {
+          // mantém a lógica interna do stageInteractions
+          stageInteractions.handleMouseMove(e);
+          // atualiza também o mousePosition para o preview
+          const stage = e.target?.getStage?.();
+          if (stage) {
+            const pos = stage.getPointerPosition();
+            if (pos) setMousePosition({ x: pos.x, y: pos.y });
+          }
+        }}
       >
         <Layer>
           {shouldShowPreview && (
@@ -183,8 +195,8 @@ export default function App() {
               <UMLRelationshipComponent
                 key={rel.id}
                 relationship={rel}
-                from={getElementCenter(fromElement)}
-                to={getElementCenter(toElement)}
+                fromElement={fromElement}
+                toElement={toElement}
                 isSelected={diagramState.selectedElement === rel.id}
                 onClick={operations.handleElementClick}
                 diagramType={diagramType}
@@ -193,22 +205,14 @@ export default function App() {
           })}
 
          {diagramState.diagram.elements.map((element) => {
-            if (diagramType === 'usecase' && isUseCaseElement(element)) {
+          // debug: verifique posição / tipo
+          // console.log('📍 Elemento no App.tsx:', { id: element.id, type: element.type, x: element.x, y: element.y });
+          if (diagramType === 'usecase') {
+            if (element.type === 'actor' || element.type === 'usecase') {
               return (
                 <UseCaseComponent
                   key={element.id}
-                  element={element}
-                  onDragEnd={operations.handleElementDragEnd}
-                  onClick={operations.handleElementClick}
-                  onTextEdit={operations.handleTextEdit}
-                  isSelected={diagramState.selectedElement === element.id}
-                />
-              );
-            } else if (diagramType === 'activity' && isActivityElement(element)) {
-              return (
-                <ActivityComponent
-                  key={element.id}
-                  element={element}
+                  element={element as UseCaseElement}
                   onDragEnd={operations.handleElementDragEnd}
                   onClick={operations.handleElementClick}
                   onTextEdit={operations.handleTextEdit}
@@ -216,7 +220,23 @@ export default function App() {
                 />
               );
             }
-            return null;
+          } else if (diagramType === 'activity') {
+            if ([
+              'activity', 'decision', 'start', 'end', 
+              'fork', 'join', 'merge'
+            ].includes(element.type)) {
+              return (
+                <ActivityComponent
+                  key={element.id}
+                  element={element as ActivityElement}
+                  onDragEnd={operations.handleElementDragEnd}
+                  onClick={operations.handleElementClick}
+                  onTextEdit={operations.handleTextEdit}
+                  isSelected={diagramState.selectedElement === element.id}
+                />
+              );
+          }}
+          return null;
           })}
         </Layer>
       </Stage>

@@ -16,8 +16,8 @@ const initialDiagram: UMLDiagram = {
             name: 'Usuário',
             x: 100,
             y: 100,
-            width: 80,
-            height: 120
+            width: 60,
+            height: 100
         },
         {
             id: '2',
@@ -25,8 +25,8 @@ const initialDiagram: UMLDiagram = {
             name: 'Realizar Login',
             x: 300,
             y: 120,
-            width: 150,
-            height: 60
+            width: 100,
+            height: 40
         }
     ],
     relationships: [

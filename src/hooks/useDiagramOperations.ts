@@ -1,5 +1,8 @@
 import { useCallback } from 'react';
-import { UseCaseElement, ActivityElement, UMLRelationship, Tool, UMLDiagram, CreationState, ConnectionState } from '../types/umlTypes';
+import { UseCaseElement, ActivityElement, UMLRelationship, Tool, UMLDiagram, CreationState, ConnectionState, RelationshipType } from '../types/umlTypes';
+import { getElementDefaults } from "../utils/diagramDefaults";
+import { v4 as uuidv4 } from "uuid";
+
 
 interface DiagramOperationsProps {
     diagram: UMLDiagram;
@@ -42,6 +45,25 @@ export const useDiagramOperations = (
         clearEditingState
     } = props;
 
+    const createNewRelationship = useCallback((from: string, to: string): UMLRelationship => {
+        // Determina o tipo de relacionamento baseado no tipo de diagrama
+        let relationshipType: RelationshipType;
+        
+        if (diagramType === 'activity') {
+            relationshipType = 'control_flow';
+        } else {
+            relationshipType = 'association';
+        }
+
+        return {
+            id: Date.now().toString(),
+            from,
+            to,
+            type: relationshipType,
+            label: getDefaultRelationshipLabel(relationshipType)
+        };
+    }, [diagramType]);
+
     const handleElementDragEnd = useCallback((id: string, x: number, y: number) => {
         updateDiagram((prev: UMLDiagram) => ({
             ...prev,
@@ -78,7 +100,7 @@ export const useDiagramOperations = (
             setSelectedElement(id);
             setIsEditing(false);
         }
-    }, [creationState, connectionState, connectionStart, setConnectionStart, setConnectionState, setSelectedElement, setIsEditing, updateDiagram]);
+    }, [creationState, connectionState, connectionStart, setConnectionStart, setConnectionState, setSelectedElement, setIsEditing, updateDiagram, createNewRelationship]);
 
     const handleStageClick = useCallback(() => {
         // Click no stage vazio - desselecionar elemento atual
@@ -150,42 +172,27 @@ export const useDiagramOperations = (
         }
     }, [connectionState, creationState, isEditing, selectedElement, setIsEditing, updateDiagram, clearEditingState]);
 
-    const createNewElement = useCallback((tool: Tool, x: number, y: number): UseCaseElement | ActivityElement => {
-        const baseElement = {
-            id: Date.now().toString(),
+    const createNewElement = useCallback(
+        (tool: Tool, x: number, y: number): UseCaseElement | ActivityElement => {
+            const defaults = getElementDefaults(tool);
+
+            const baseElement = {
+            id: uuidv4(),
             name: getDefaultName(tool),
-            x: x - 40,
-            y: y - 30,
-            width: 80,
-            height: 60,
-            isEditing: false
-        };
+            x: x - defaults.width / 2,
+            y: y - defaults.height / 2,
+            width: defaults.width,
+            height: defaults.height,
+            isEditing: false,
+            };
 
-        if (diagramType === 'usecase') {
             return {
-                ...baseElement,
-                type: tool === 'actor' ? 'actor' : 'usecase',
-                width: tool === 'actor' ? 60 : 120,
-                height: tool === 'actor' ? 100 : 60
-            } as UseCaseElement;
-        } else {
-            return {
-                ...baseElement,
-                type: tool as ActivityElement['type'],
-                width: getActivityElementWidth(tool),
-                height: getActivityElementHeight(tool)
-            } as ActivityElement;
-        }
-    }, [diagramType]);
-
-    const createNewRelationship = useCallback((from: string, to: string): UMLRelationship => {
-        return {
-            id: Date.now().toString(),
-            from,
-            to,
-            type: diagramType === 'activity' ? 'flow' : 'association'
-        };
-    }, [diagramType]);
+            ...baseElement,
+            type: tool as UseCaseElement["type"] | ActivityElement["type"],
+            } as UseCaseElement | ActivityElement;
+        },
+        [diagramType]
+        );
 
     // Funções auxiliares
     const getDefaultName = (tool: Tool): string => {
@@ -203,22 +210,35 @@ export const useDiagramOperations = (
         return names[tool] || 'Elemento';
     };
 
+    const getDefaultRelationshipLabel = (type: RelationshipType): string => {
+        const labels: Record<RelationshipType, string> = {
+            association: '',
+            include: '<<include>>',
+            extend: '<<extend>>',
+            generalization: '',
+            dependency: '<<use>>',
+            control_flow: '',
+            object_flow: '<<object>>'
+        };
+        return labels[type];
+    };
+
     const getActivityElementWidth = (tool: Tool): number => {
         const widths: Record<string, number> = {
-            activity: 120,
-            decision: 80,
+            activity: 80,
+            decision: 60,
             start: 40,
             end: 40,
-            fork: 20,
-            join: 20,
-            merge: 80
+            fork: 25,
+            join: 25,
+            merge: 60
         };
-        return widths[tool] || 80;
+        return widths[tool] || 60;
     };
 
     const getActivityElementHeight = (tool: Tool): number => {
         const heights: Record<string, number> = {
-            activity: 60,
+            activity: 50,
             decision: 60,
             start: 40,
             end: 40,
@@ -226,7 +246,7 @@ export const useDiagramOperations = (
             join: 80,
             merge: 60
         };
-        return heights[tool] || 60;
+        return heights[tool] || 50;
     };
 
     return {

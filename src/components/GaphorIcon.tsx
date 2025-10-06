@@ -1,8 +1,10 @@
-// src/components/GaphorIcon.tsx
 import React from "react";
-import { Image, Group, Rect, Text } from "react-konva";
+import { Group, Path, Rect } from "react-konva";
 import { ActivityElement, UseCaseElement } from "../types/umlTypes";
-import { useGaphorIcon } from "../hooks/useGaphorIcon";
+import { umlSvgContent } from "../utils/iconMapping";
+import { umlSvgColors } from "../types/umlSvgColors";
+import { parseSvgContent } from "../utils/svgParser";
+import { getElementDefaults } from "../utils/diagramDefaults";
 
 interface GaphorIconProps {
   element: UseCaseElement | ActivityElement;
@@ -10,6 +12,7 @@ interface GaphorIconProps {
   y: number;
   width: number;
   height: number;
+  isSelected?: boolean;
 }
 
 export const GaphorIcon: React.FC<GaphorIconProps> = ({
@@ -17,36 +20,75 @@ export const GaphorIcon: React.FC<GaphorIconProps> = ({
   x,
   y,
   width,
-  height
+  height,
+  isSelected = false,
 }) => {
-  const getElementColor = (): string => {
-    // ...sua lógica...
-    return "#4F46E5";
-  };
+  const svgContent = umlSvgContent[element.type];
 
-  const { image, loading, error } = useGaphorIcon({
-    elementType: element.type,
-    width,
-    height,
-    color: getElementColor(),
-    scale: 2
-  });
+  if (!svgContent) {
+    // fallback simples (você já tinha um fallback antes)
+    return null;
+  }
 
-  if (loading || !image) return null;
+  try {
+    const { paths, viewBox, translate } = parseSvgContent(svgContent);
+    const color = umlSvgColors[element.type] || "#111827";
 
-  return (
-    <Image
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      image={image}
-      listening={false}
-    />
-  );
-};
+    if (paths.length === 0) {
+      return null;
+    }
 
-const getCornerRadius = (elementType: string): number => {
-  const elementsWithCornerRadius = ['activity', 'actor', 'system', 'usecase'];
-  return elementsWithCornerRadius.includes(elementType) ? 5 : 0;
+    // escala para caber na caixa (mantendo ratio)
+    const defaults = getElementDefaults(element.type);
+    const baseScale = Math.min(width / viewBox.width, height / viewBox.height);
+    const scale = baseScale * defaults.scaleBoost;
+    const finalWidth = viewBox.width * scale;
+    const finalHeight = viewBox.height * scale;
+    // offset para centralizar o viewBox dentro da caixa desejada
+    const offsetX = (width - finalWidth) / 2;
+    const offsetY = (height - finalHeight) / 2;
+
+    // translate acumulada do SVG (normalmente valores negativos como -44, -19 no Gaphor)
+    const tx = translate.x;
+    const ty = translate.y;
+
+    return (
+      <Group
+        x={x + offsetX}
+        y={y + offsetY}
+        scaleX={scale}
+        scaleY={scale}
+        // importante: não colocamos draggable aqui — o draggable está nos componentes pais
+      >
+        {paths.map((d, idx) => (
+          <Path
+            key={idx}
+            data={d}
+            // aplica compensação da translate do SVG e do viewBox.min
+            x={tx - viewBox.minX}
+            y={ty - viewBox.minY}
+            fill={color}
+            stroke={isSelected ? "#6366f1" : "transparent"}
+            strokeWidth={isSelected ? 2 / Math.max(scale, 0.0001) : 0}
+            perfectDrawEnabled={false}
+            listening={true} // permite clicar/arrastar sobre o próprio ícone (events sobem para o Group pai)
+          />
+        ))}
+
+        {/* DEBUG: mostra área do viewBox */}
+        <Rect
+          x={0}
+          y={0}
+          width={viewBox.width}
+          height={viewBox.height}
+          stroke="red"
+          strokeWidth={0.2 / Math.max(scale, 0.0001)}
+          listening={false}
+        />
+      </Group>
+    );
+  } catch (error) {
+    console.error("Erro ao renderizar GaphorIcon:", error);
+    return null;
+  }
 };

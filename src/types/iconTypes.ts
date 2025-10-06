@@ -10,8 +10,10 @@ export interface IconPaths {
 
 export type ElementType = 
   | 'actor' | 'usecase' | 'system'
-  | 'activity' | 'decision' | 'start' | 'end' | 'fork' | 'join' | 'merge'
-  | 'association' | 'inheritance' | 'composition' | 'aggregation' | 'dependency' | 'include' | 'extend' | 'flow';
+  | 'activity' | 'decision' | 'start' | 'end' | 'end_flow'
+  | 'fork' | 'join' | 'merge' | 'object' | 'note'
+  | 'association' | 'generalization' | 'extend' | 'include'
+  | 'control_flow' | 'realization' | 'swimlane';
 
 export type ToolbarTool = 
   | 'select' | 'actor' | 'usecase' | 'activity' | 'decision' | 'relationship'

@@ -1,23 +1,27 @@
+import { umlSvgColors } from "./umlSvgColors";
+
 export interface UseCaseElement {
   id: string;
-  type: 'actor' | 'usecase' | 'system';
+  type: 'actor' | 'usecase' | 'object' | 'note' | 'association' | 'generalization' | 'extend' | 'include';
   name: string;
   x: number;
   y: number;
   width: number;
   height: number;
   isEditing?: boolean;
+  color?: keyof typeof umlSvgColors;
 }
 
 export interface ActivityElement {
   id: string;
-  type: 'start' | 'end' | 'activity' | 'decision' | 'merge' | 'fork' | 'join';
+  type: 'start' | 'end' | 'activity' | 'decision' | 'merge' | 'fork' | 'join' | 'control_flow' | 'realization' | 'swimlane' | 'end_flow';
   name: string;
   x: number;
   y: number;
   width: number;
   height: number;
   isEditing?: boolean;
+  color?: keyof typeof umlSvgColors;
 }
 
 export interface UMLRelationship {
@@ -26,6 +30,7 @@ export interface UMLRelationship {
   to: string;         // ID do elemento de destino
   type: RelationshipType;
   label?: string;
+  guard?: string;    // Condição para fluxos de controle
 }
 
 export interface UMLDiagram {
@@ -63,4 +68,11 @@ export type Tool =
   | "merge";
 export type CreationState = 'idle' | 'placing';
 export type ConnectionState = 'idle' | 'selecting-first' | 'selecting-second';
-export type RelationshipType = 'association' | 'include' | 'extend' | 'generalization' | 'flow';
+export type RelationshipType =
+  | 'association'
+  | 'include'
+  | 'extend'
+  | 'generalization'
+  | 'dependency'
+  | 'control_flow'
+  | 'object_flow';

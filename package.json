@@ -71,6 +71,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.84.0",
     "@vscode/vsce": "^2.15.0",
     "buffer": "^6.0.3",
@@ -91,13 +92,14 @@
     "canvas": "^3.2.0",
     "canvg": "^4.0.3",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.2",
+    "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "konva": "^9.3.22",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-konva": "^19.0.7",
-    "use-image": "^1.1.4"
+    "use-image": "^1.1.4",
+    "uuid": "^13.0.0"
   }
 }
