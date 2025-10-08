@@ -13,6 +13,7 @@ import { useDiagramOperations } from "../hooks/useDiagramOperations";
 import { useVSCodeCommunication } from "../hooks/useVSCodeCommunication";
 import { useStageInteractions } from "../hooks/useStageInteractions";
 import { useCanvasResize } from "../hooks/useCanvasResize";
+import { useMousePosition } from "../hooks/useMousePosition";
 import { useStageZoom } from "../hooks/useStageZoom";
 import { useStageDragFeedback } from "../hooks/useStageDragFeedback";
 
@@ -20,17 +21,21 @@ import { ExportService } from "../services/exportService";
 import { UMLDiagram, UseCaseElement, ActivityElement } from "../types/umlTypes";
 import { GridBackground } from "../components/GridBackground";
 
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+
 export default function App() {
   const [diagramType, setDiagramType] = useState<"usecase" | "activity">("usecase");
 
   // 🎛️ Estado e hooks principais
   const diagramState = useDiagramState();
+  const { mousePosition } = useMousePosition();
   const { handleStageWheel, handleStagePan, handleDoubleClick } = useStageZoom();
   const stageSize = useCanvasResize(50);
   const { handleDragMove } = useStageDragFeedback({
     updateDiagram: diagramState.updateDiagram,
   });
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [mousePosLocal, setMousePosLocal] = useState({ x: 0, y: 0 });
 
   const operations = useDiagramOperations(
     {
@@ -75,10 +80,25 @@ export default function App() {
     setConnectionState: diagramState.setConnectionState,
     setConnectionStart: diagramState.setConnectionStart,
     clearEditingState: diagramState.clearEditingState,
-    onMousePositionChange: setMousePosition,
+    onMousePositionChange: setMousePosLocal
   });
 
-  // 📦 Exportações
+  // confirm dialog state
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    message: string;
+    onConfirm?: () => void;
+  }>({ open: false, message: '', onConfirm: undefined });
+
+  // keyboard shortcuts: delete key triggers delete flow
+  useKeyboardShortcuts({
+    onDelete: () => {
+      if (!diagramState.selectedElement) return;
+      handleDeleteRequest(diagramState.selectedElement);
+    }
+  });
+
+  // export functions
   const handleExportPNG = async () => {
     try {
       const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
@@ -105,7 +125,7 @@ export default function App() {
     }
   };
 
-  // ⚙️ Controle de preview
+  // control preview
   const shouldShowPreview = diagramState.creationState === "placing";
 
   const handleDiagramTypeChange = (type: "usecase" | "activity") => {
@@ -123,7 +143,24 @@ export default function App() {
     });
   };
 
-  // 🎨 Renderização principal
+  // DELETE flow: request -> if needs confirm show dialog -> execute
+  const handleDeleteRequest = (id: string) => {
+    const prepared = operations.prepareDeleteElement(id);
+    if (prepared.needsConfirm) {
+      setConfirmState({
+        open: true,
+        message: `O elemento possui ${prepared.relatedCount} ligação(ões). Deseja excluir o elemento e todas as suas ligações?`,
+        onConfirm: () => {
+          prepared.execute();
+          setConfirmState({ open: false, message: '', onConfirm: undefined });
+        }
+      });
+    } else {
+      // execute immediately
+      prepared.execute();
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <Toolbar
@@ -134,6 +171,9 @@ export default function App() {
         onLoad={vsCodeComm.handleLoad}
         onExportPNG={handleExportPNG}
         onExportPDF={handleExportPDF}
+        onDeleteRequested={() => {
+          if (diagramState.selectedElement) handleDeleteRequest(diagramState.selectedElement);
+        }}
         isEditing={diagramState.isEditing}
         selectedElement={diagramState.selectedElement}
         creationState={diagramState.creationState}
@@ -155,7 +195,6 @@ export default function App() {
         onDblClick={handleDoubleClick}
         onMouseMove={stageInteractions.handleMouseMove}
       >
-
         {/* GRID de fundo */}
         <Layer listening={false}>
           <GridBackground width={stageSize.width} height={stageSize.height} gridSize={25} />
@@ -166,8 +205,8 @@ export default function App() {
           {shouldShowPreview && (
             <ElementPreview
               tool={diagramState.tool}
-              x={mousePosition.x}
-              y={mousePosition.y}
+              x={mousePosLocal.x}
+              y={mousePosLocal.y}
               size={40}
               visible={true}
             />
@@ -226,6 +265,16 @@ export default function App() {
           <DebugLayer diagram={diagramState.diagram} enabled={false} />
         </Layer>
       </Stage>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title="Excluir elemento"
+        message={confirmState.message}
+        onCancel={() => setConfirmState({ open: false, message: '', onConfirm: undefined })}
+        onConfirm={() => {
+          confirmState.onConfirm?.();
+        }}
+      />
     </div>
   );
 }

@@ -2,11 +2,10 @@ import React from 'react';
 import {
   User, Circle, Square, Diamond, ArrowRight,
   Save, Edit, FileDown, FolderOpen, X, Image as ImageIcon,
-  Play, GitFork, GitMerge, CircleDot
+  Play, GitFork, GitMerge, CircleDot, Trash2
 } from 'lucide-react';
 import { Tool, CreationState } from '../types/umlTypes';
 
-// Definir um tipo sem o 'select'
 type AvailableTool = Exclude<Tool, 'select'>;
 
 interface ToolbarProps {
@@ -17,6 +16,7 @@ interface ToolbarProps {
   onLoad: () => void;
   onExportPNG: () => void;
   onExportPDF: () => void;
+  onDeleteRequested: () => void;
   isEditing: boolean;
   selectedElement: string | null;
   creationState: CreationState;
@@ -33,6 +33,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onLoad,
   onExportPNG,
   onExportPDF,
+  onDeleteRequested,
   isEditing,
   selectedElement,
   creationState,
@@ -93,21 +94,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }
   };
 
-  // Função para cancelar operações em andamento
   const handleCancel = () => {
-    // Volta para a primeira ferramenta disponível
     const availableTools = getAvailableTools();
     if (availableTools.length > 0) {
       onToolChange(availableTools[0]);
     }
   };
 
-  // Converter o tool atual para AvailableTool (removendo 'select' se necessário)
   const currentTool = tool === 'select' ? getAvailableTools()[0] : tool as AvailableTool;
 
   return (
     <div className="toolbar">
-      {/* Seletor de Tipo de Diagrama */}
       <div className="toolbar-section">
         <span className="toolbar-label">Tipo de Diagrama:</span>
         <select 
@@ -121,7 +118,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </select>
       </div>
 
-      {/* Ferramentas */}
       <div className="toolbar-section">
         <span className="toolbar-label">Ferramentas:</span>
         {getAvailableTools().map((availableTool) => (
@@ -138,7 +134,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         ))}
       </div>
 
-      {/* Ações */}
       <div className="toolbar-section">
         <span className="toolbar-label">Ações:</span>
         {selectedElement && (
@@ -168,9 +163,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <button onClick={onExportPDF} className="toolbar-button toolbar-button-export" disabled={connectionState !== 'idle' || creationState !== 'idle'}>
           <FileDown size={16}/> <span>PDF</span>
         </button>
+
+        {/* Delete */}
+        <button
+          onClick={onDeleteRequested}
+          className="toolbar-button toolbar-button-danger"
+          disabled={!selectedElement || connectionState !== 'idle' || creationState !== 'idle'}
+          title="Excluir elemento"
+        >
+          <Trash2 size={16} /> <span>Excluir</span>
+        </button>
       </div>
 
-      {/* Status */}
       <div className="toolbar-section toolbar-status-section">
         <span className="toolbar-status">
           {connectionState !== 'idle' ? getConnectionText() :
@@ -180,7 +184,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </span>
       </div>
 
-      {/* Cancelar */}
       {(creationState === 'placing' || connectionState !== 'idle') && (
         <button onClick={handleCancel} className="toolbar-button toolbar-button-danger" title="Cancelar operação">
           <X size={16}/> <span>Cancelar</span>
