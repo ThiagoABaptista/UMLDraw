@@ -1,11 +1,13 @@
 import React from "react";
 import { Group } from "react-konva";
+import Konva from "konva";
 import { EditableText } from "./EditableText";
 import { GaphorIcon } from "./GaphorIcon";
 import { ActivityElement } from "../types/umlTypes";
 
 interface ActivityComponentProps {
   element: ActivityElement;
+  onDragMove?: (id: string, x: number, y: number) => void;
   onDragEnd: (id: string, x: number, y: number) => void;
   onClick: (id: string) => void;
   onTextEdit: (id: string, value: string) => void;
@@ -14,58 +16,40 @@ interface ActivityComponentProps {
 
 export const ActivityComponent: React.FC<ActivityComponentProps> = ({
   element,
+  onDragMove,
   onDragEnd,
   onClick,
   onTextEdit,
   isSelected,
 }) => {
-  const handleEdit = (newName: string) => {
-    onTextEdit(element.id, newName);
-  };
+  const handleEdit = (newName: string) => onTextEdit(element.id, newName);
 
   const getTextPosition = () => {
     switch (element.type) {
       case "activity":
-        return {
-          x: 10,
-          y: element.height + 6, // texto fora do ícone
-          width: element.width - 20,
-          showText: true,
-        };
+        return { x: 0, y: element.height + 8, width: element.width, showText: true };
       case "decision":
-        return {
-          x: 0,
-          y: element.height + 6,
-          width: element.width,
-          showText: false, // geralmente não mostra texto interno
-        };
-      case "start":
-      case "end":
-      case "fork":
-      case "join":
-      case "merge":
-        return { x: 0, y: 0, width: 0, showText: false };
+        return { x: 0, y: element.height + 6, width: element.width, showText: false };
       default:
-        return {
-          x: 0,
-          y: element.height + 6,
-          width: element.width,
-          showText: true,
-        };
+        return { x: 0, y: element.height + 6, width: element.width, showText: false };
     }
   };
 
-  const textPos = getTextPosition();
+  const textPosition = getTextPosition();
 
   return (
     <Group
       x={element.x}
       y={element.y}
       draggable
-      onDragEnd={(e) => {
+      onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
+        onDragMove?.(element.id, e.target.x(), e.target.y());
+      }}
+      onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => {
         onDragEnd(element.id, e.target.x(), e.target.y());
       }}
       onClick={() => onClick(element.id)}
+      listening={true}
     >
       <GaphorIcon
         element={element}
@@ -76,11 +60,11 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
         isSelected={isSelected}
       />
 
-      {textPos.showText && (
+      {textPosition.showText && (
         <EditableText
-          x={textPos.x}
-          y={textPos.y}
-          width={textPos.width}
+          x={textPosition.x}
+          y={textPosition.y}
+          width={textPosition.width}
           text={element.name}
           fontSize={12}
           fill="#111827"

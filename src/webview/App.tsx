@@ -1,23 +1,37 @@
-import { useState } from 'react';
-import { Stage, Layer } from 'react-konva';
-import { Toolbar } from '../components/Toolbar';
-import { UMLRelationshipComponent } from '../components/UMLRelationship';
-import { UseCaseComponent } from '../components/UseCaseComponent';
-import { ActivityComponent } from '../components/ActivityComponent';
-import { ElementPreview } from '../components/ElementPreview';
-import { useDiagramState } from '../hooks/useDiagramState';
-import { useDiagramOperations } from '../hooks/useDiagramOperations';
-import { useVSCodeCommunication } from '../hooks/useVSCodeCommunication';
-import { useStageInteractions } from '../hooks/useStageInteractions';
-import { ExportService } from '../services/exportService';
-import { UseCaseElement, ActivityElement, UMLDiagram } from '../types/umlTypes';
+import React, { useState } from "react";
+import { Stage, Layer } from "react-konva";
+
+import { Toolbar } from "../components/Toolbar";
+import { UMLRelationshipComponent } from "../components/UMLRelationship";
+import { UseCaseComponent } from "../components/UseCaseComponent";
+import { ActivityComponent } from "../components/ActivityComponent";
+import { ElementPreview } from "../components/ElementPreview";
+import { DebugLayer } from "../hooks/useDebugLayer";
+
+import { useDiagramState } from "../hooks/useDiagramState";
+import { useDiagramOperations } from "../hooks/useDiagramOperations";
+import { useVSCodeCommunication } from "../hooks/useVSCodeCommunication";
+import { useStageInteractions } from "../hooks/useStageInteractions";
+import { useCanvasResize } from "../hooks/useCanvasResize";
+import { useStageZoom } from "../hooks/useStageZoom";
+import { useStageDragFeedback } from "../hooks/useStageDragFeedback";
+
+import { ExportService } from "../services/exportService";
+import { UMLDiagram, UseCaseElement, ActivityElement } from "../types/umlTypes";
+import { GridBackground } from "../components/GridBackground";
 
 export default function App() {
-  const [diagramType, setDiagramType] = useState<'usecase' | 'activity'>('usecase');
+  const [diagramType, setDiagramType] = useState<"usecase" | "activity">("usecase");
+
+  // 🎛️ Estado e hooks principais
+  const diagramState = useDiagramState();
+  const { handleStageWheel, handleStagePan, handleDoubleClick } = useStageZoom();
+  const stageSize = useCanvasResize(50);
+  const { handleDragMove } = useStageDragFeedback({
+    updateDiagram: diagramState.updateDiagram,
+  });
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  // Hooks customizados
-  const diagramState = useDiagramState();
   const operations = useDiagramOperations(
     {
       diagram: diagramState.diagram,
@@ -35,7 +49,7 @@ export default function App() {
       setConnectionState: diagramState.setConnectionState,
       setConnectionStart: diagramState.setConnectionStart,
       updateDiagram: diagramState.updateDiagram,
-      clearEditingState: diagramState.clearEditingState
+      clearEditingState: diagramState.clearEditingState,
     },
     diagramType
   );
@@ -60,88 +74,58 @@ export default function App() {
     setTool: diagramState.setTool,
     setConnectionState: diagramState.setConnectionState,
     setConnectionStart: diagramState.setConnectionStart,
-    clearEditingState: diagramState.clearEditingState
+    clearEditingState: diagramState.clearEditingState,
+    onMousePositionChange: setMousePosition,
   });
 
-  // Funções de exportação
+  // 📦 Exportações
   const handleExportPNG = async () => {
     try {
-      const stageContainer = document.querySelector('.konvajs-content') as HTMLElement;
-      if (stageContainer) {
-        await ExportService.exportToPNG(stageContainer, `diagrama-${diagramType}.png`);
-        vsCodeComm.showMessage('info', 'Diagrama exportado como PNG com sucesso!');
-      } else {
-        throw new Error('Container do diagrama não encontrado');
-      }
+      const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
+      if (!stageContainer) throw new Error("Container do diagrama não encontrado");
+
+      await ExportService.exportToPNG(stageContainer, `diagrama-${diagramType}.png`);
+      vsCodeComm.showMessage("info", "Diagrama exportado como PNG com sucesso!");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      vsCodeComm.showMessage('error', `Erro ao exportar PNG: ${errorMessage}`);
+      const msg = error instanceof Error ? error.message : "Erro desconhecido";
+      vsCodeComm.showMessage("error", `Erro ao exportar PNG: ${msg}`);
     }
   };
 
   const handleExportPDF = async () => {
     try {
-      const stageContainer = document.querySelector('.konvajs-content') as HTMLElement;
-      if (stageContainer) {
-        await ExportService.exportToPDF(stageContainer, `diagrama-${diagramType}.pdf`);
-        vsCodeComm.showMessage('info', 'Diagrama exportado como PDF com sucesso!');
-      } else {
-        throw new Error('Container do diagrama não encontrado');
-      }
+      const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
+      if (!stageContainer) throw new Error("Container do diagrama não encontrado");
+
+      await ExportService.exportToPDF(stageContainer, `diagrama-${diagramType}.pdf`);
+      vsCodeComm.showMessage("info", "Diagrama exportado como PDF com sucesso!");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      vsCodeComm.showMessage('error', `Erro ao exportar PDF: ${errorMessage}`);
+      const msg = error instanceof Error ? error.message : "Erro desconhecido";
+      vsCodeComm.showMessage("error", `Erro ao exportar PDF: ${msg}`);
     }
   };
 
-  const getElementCenter = (element: UseCaseElement | ActivityElement) => ({
-    x: element.x + element.width / 2,
-    y: element.y + element.height / 2
-  });
+  // ⚙️ Controle de preview
+  const shouldShowPreview = diagramState.creationState === "placing";
 
-  const isUseCaseElement = (element: UseCaseElement | ActivityElement): element is UseCaseElement => {
-    return element.type === 'actor' || element.type === 'usecase';
-  };
-
-  const isActivityElement = (element: UseCaseElement | ActivityElement): element is ActivityElement => {
-    return ['start', 'end', 'activity', 'decision', 'fork', 'join', 'merge'].includes(element.type);
-  };
-
-  // CORREÇÃO: Função para verificar se a ferramenta é de elemento (não select/relationship)
-  const shouldShowPreview = diagramState.creationState === 'placing';
-
-  const handleDiagramTypeChange = (type: 'usecase' | 'activity') => {
+  const handleDiagramTypeChange = (type: "usecase" | "activity") => {
     setDiagramType(type);
     diagramState.setDiagram({
       metadata: {
-        version: '1.0',
-        name: 'Novo Diagrama',
+        version: "1.0",
+        name: "Novo Diagrama",
         created: new Date().toISOString(),
         lastModified: new Date().toISOString(),
-        type: type
+        type,
       },
       elements: [],
-      relationships: []
+      relationships: [],
     });
   };
 
-  const handleElementDragMove = (element: UseCaseElement | ActivityElement, e: any) => {
-    const updatedElement = {
-      ...element,
-      x: e.target.x(),
-      y: e.target.y()
-    };
-
-    diagramState.updateDiagram((prev: UMLDiagram) => ({
-      ...prev,
-      elements: prev.elements.map(el => 
-        el.id === element.id ? updatedElement : el
-      )
-    }));
-  };
-
+  // 🎨 Renderização principal
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <Toolbar
         tool={diagramState.tool}
         onToolChange={operations.handleToolChange}
@@ -157,38 +141,42 @@ export default function App() {
         diagramType={diagramType}
         onDiagramTypeChange={handleDiagramTypeChange}
       />
-      
-      <Stage 
-        width={window.innerWidth} 
-        height={window.innerHeight - 50}
+
+      <Stage
+        width={stageSize.width}
+        height={stageSize.height}
+        draggable
+        onWheel={(e) => {
+          handleStagePan(e);
+          handleStageWheel(e);
+        }}
         onClick={stageInteractions.handleStageClick}
         onTap={stageInteractions.handleStageClick}
-        onMouseMove={(e) => {
-          // mantém a lógica interna do stageInteractions
-          stageInteractions.handleMouseMove(e);
-          // atualiza também o mousePosition para o preview
-          const stage = e.target?.getStage?.();
-          if (stage) {
-            const pos = stage.getPointerPosition();
-            if (pos) setMousePosition({ x: pos.x, y: pos.y });
-          }
-        }}
+        onDblClick={handleDoubleClick}
+        onMouseMove={stageInteractions.handleMouseMove}
       >
+
+        {/* GRID de fundo */}
+        <Layer listening={false}>
+          <GridBackground width={stageSize.width} height={stageSize.height} gridSize={25} />
+        </Layer>
+
+        {/* LAYER principal */}
         <Layer>
           {shouldShowPreview && (
-            <ElementPreview 
+            <ElementPreview
               tool={diagramState.tool}
-              x={mousePosition.x - 20} // Centralizar no cursor
-              y={mousePosition.y - 20}
+              x={mousePosition.x}
+              y={mousePosition.y}
               size={40}
               visible={true}
             />
           )}
 
+          {/* Relacionamentos */}
           {diagramState.diagram.relationships.map((rel) => {
-            const fromElement = diagramState.diagram.elements.find(e => e.id === rel.from);
-            const toElement = diagramState.diagram.elements.find(e => e.id === rel.to);
-            
+            const fromElement = diagramState.diagram.elements.find((e) => e.id === rel.from);
+            const toElement = diagramState.diagram.elements.find((e) => e.id === rel.to);
             if (!fromElement || !toElement) return null;
 
             return (
@@ -204,15 +192,26 @@ export default function App() {
             );
           })}
 
-         {diagramState.diagram.elements.map((element) => {
-          // debug: verifique posição / tipo
-          // console.log('📍 Elemento no App.tsx:', { id: element.id, type: element.type, x: element.x, y: element.y });
-          if (diagramType === 'usecase') {
-            if (element.type === 'actor' || element.type === 'usecase') {
+          {/* Elementos */}
+          {diagramState.diagram.elements.map((element) => {
+            if (diagramType === "usecase") {
               return (
                 <UseCaseComponent
                   key={element.id}
                   element={element as UseCaseElement}
+                  onDragMove={handleDragMove}
+                  onDragEnd={operations.handleElementDragEnd}
+                  onClick={operations.handleElementClick}
+                  onTextEdit={operations.handleTextEdit}
+                  isSelected={diagramState.selectedElement === element.id}
+                />
+              );
+            } else if (diagramType === "activity") {
+              return (
+                <ActivityComponent
+                  key={element.id}
+                  element={element as ActivityElement}
+                  onDragMove={handleDragMove}
                   onDragEnd={operations.handleElementDragEnd}
                   onClick={operations.handleElementClick}
                   onTextEdit={operations.handleTextEdit}
@@ -220,24 +219,11 @@ export default function App() {
                 />
               );
             }
-          } else if (diagramType === 'activity') {
-            if ([
-              'activity', 'decision', 'start', 'end', 
-              'fork', 'join', 'merge'
-            ].includes(element.type)) {
-              return (
-                <ActivityComponent
-                  key={element.id}
-                  element={element as ActivityElement}
-                  onDragEnd={operations.handleElementDragEnd}
-                  onClick={operations.handleElementClick}
-                  onTextEdit={operations.handleTextEdit}
-                  isSelected={diagramState.selectedElement === element.id}
-                />
-              );
-          }}
-          return null;
+            return null;
           })}
+
+          {/* Layer de debug opcional */}
+          <DebugLayer diagram={diagramState.diagram} enabled={false} />
         </Layer>
       </Stage>
     </div>

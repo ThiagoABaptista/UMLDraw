@@ -1,11 +1,13 @@
 import React from "react";
 import { Group } from "react-konva";
+import Konva from "konva";
 import { UseCaseElement } from "../types/umlTypes";
 import { GaphorIcon } from "./GaphorIcon";
 import { EditableText } from "./EditableText";
 
 interface UseCaseComponentProps {
   element: UseCaseElement;
+  onDragMove?: (id: string, x: number, y: number) => void;
   onDragEnd: (id: string, x: number, y: number) => void;
   onClick: (id: string) => void;
   onTextEdit: (id: string, value: string) => void;
@@ -14,50 +16,40 @@ interface UseCaseComponentProps {
 
 export const UseCaseComponent: React.FC<UseCaseComponentProps> = ({
   element,
+  onDragMove,
   onDragEnd,
   onClick,
   onTextEdit,
   isSelected,
 }) => {
-  const handleEdit = (newName: string) => {
-    onTextEdit(element.id, newName);
-  };
+  const handleEdit = (newName: string) => onTextEdit(element.id, newName);
 
-  // Reposicionamento do texto
   const getTextPosition = () => {
     switch (element.type) {
       case "actor":
-        return {
-          x: 0,
-          y: element.height + 6, // texto sempre abaixo do ícone
-          width: element.width,
-        };
+        return { x: 0, y: element.height + 10, width: element.width };
       case "usecase":
-        return {
-          x: 10,
-          y: element.height / 2 - 10, // centralizado na elipse
-          width: element.width - 20,
-        };
+        return { x: 10, y: element.height + 6, width: element.width - 20 };
       default:
-        return {
-          x: 0,
-          y: element.height + 6,
-          width: element.width,
-        };
+        return { x: 0, y: element.height + 6, width: element.width };
     }
   };
 
-  const textPos = getTextPosition();
+  const textPosition = getTextPosition();
 
   return (
     <Group
       x={element.x}
       y={element.y}
       draggable
-      onDragEnd={(e) => {
+      onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
+        onDragMove?.(element.id, e.target.x(), e.target.y());
+      }}
+      onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => {
         onDragEnd(element.id, e.target.x(), e.target.y());
       }}
       onClick={() => onClick(element.id)}
+      listening={true}
     >
       <GaphorIcon
         element={element}
@@ -69,9 +61,9 @@ export const UseCaseComponent: React.FC<UseCaseComponentProps> = ({
       />
 
       <EditableText
-        x={textPos.x}
-        y={textPos.y}
-        width={textPos.width}
+        x={textPosition.x}
+        y={textPosition.y}
+        width={textPosition.width}
         text={element.name}
         fontSize={12}
         fill="#111827"
