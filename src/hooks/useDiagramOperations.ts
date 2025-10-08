@@ -239,32 +239,6 @@ export const useDiagramOperations = (
     return labels[type];
   };
 
-  const getActivityElementWidth = (toolParam: Tool): number => {
-    const widths: Record<string, number> = {
-      activity: 80,
-      decision: 60,
-      start: 40,
-      end: 40,
-      fork: 25,
-      join: 25,
-      merge: 60
-    };
-    return widths[toolParam] || 60;
-  };
-
-  const getActivityElementHeight = (toolParam: Tool): number => {
-    const heights: Record<string, number> = {
-      activity: 50,
-      decision: 60,
-      start: 40,
-      end: 40,
-      fork: 80,
-      join: 80,
-      merge: 60
-    };
-    return heights[toolParam] || 50;
-  };
-
   return {
     handleElementDragEnd,
     handleElementClick,
