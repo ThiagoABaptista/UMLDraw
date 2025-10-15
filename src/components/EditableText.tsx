@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Text, Group } from 'react-konva';
+import React, { useState, useRef, useEffect } from "react";
+import { Text, Group } from "react-konva";
 
 interface EditableTextProps {
   x: number;
@@ -13,7 +13,7 @@ interface EditableTextProps {
   onEditStart?: () => void;
   onEditEnd: (newText: string) => void;
   isEditing?: boolean;
-  align?: 'left' | 'center' | 'right';
+  align?: "left" | "center" | "right";
 }
 
 export const EditableText: React.FC<EditableTextProps> = ({
@@ -22,13 +22,13 @@ export const EditableText: React.FC<EditableTextProps> = ({
   width,
   text,
   fontSize = 14,
-  fontStyle = 'normal',
-  fill = '#374151',
-  backgroundColor = 'white',
+  fontStyle = "normal",
+  fill = "#111827",
+  backgroundColor = "transparent",
   onEditStart,
   onEditEnd,
   isEditing = false,
-  align = 'left'
+  align = "left",
 }) => {
   const [isEditingInternal, setIsEditing] = useState(isEditing);
   const [currentText, setCurrentText] = useState(text);
@@ -41,144 +41,136 @@ export const EditableText: React.FC<EditableTextProps> = ({
 
   useEffect(() => {
     if (isEditingInternal && textRef.current && groupRef.current) {
-      // Esconde o texto original temporariamente
       textRef.current.hide();
-      
-      // Obtém a posição absoluta do grupo
+
       const group = groupRef.current;
       const absPos = group.getAbsolutePosition();
-      
-      // Obtém o estágio
       const stage = group.getStage();
       if (!stage) return;
-      
-      // Obtém o container do stage
+
       const container = stage.container();
       const containerRect = container.getBoundingClientRect();
-      
-      // Calcula a posição correta relativa à página
       const scale = stage.scaleX();
-      const textareaX = containerRect.left + absPos.x + x * scale;
-      const textareaY = containerRect.top + absPos.y + y * scale;
-      
-      // Determina a cor do texto com base no fundo
-      const getTextColorForBackground = (bgColor: string) => {
-        if (bgColor === '#3b82f6' || bgColor === '#2563eb' || bgColor === '#1d4ed8') {
-          return 'white';
-        }
-        return '#374151';
-      };
-      
-      const textColor = getTextColorForBackground(backgroundColor);
-      
-      // Cria o textarea
-      const textarea = document.createElement('textarea');
-      textarea.className = 'editable-textarea';
-      textarea.style.position = 'fixed';
+
+      // Coordenadas absolutas na página
+      // 🧭 Ajuste preciso da posição do textarea
+      const textNode = textRef.current;
+      const textMetrics = textNode.getClientRect();
+      const offsetY = textMetrics.height / 2 - fontSize / 2; // centraliza verticalmente
+
+      const textareaX = containerRect.left + (absPos.x + textNode.x()) * scale;
+      const textareaY = containerRect.top + (absPos.y + textNode.y() + offsetY) * scale;
+
+      // ✨ Cria o campo de texto invisível
+      const textarea = document.createElement("textarea");
+      textarea.className = "editable-textarea";
+      textarea.value = currentText;
+      textarea.style.position = "fixed";
       textarea.style.top = `${textareaY}px`;
       textarea.style.left = `${textareaX}px`;
       textarea.style.width = `${width * scale}px`;
       textarea.style.fontSize = `${fontSize * scale}px`;
-      textarea.style.fontFamily = 'Arial, sans-serif';
-      textarea.style.fontStyle = fontStyle;
-      textarea.style.background = backgroundColor;
-      textarea.style.color = textColor;
-      textarea.style.padding = `${4 * scale}px ${6 * scale}px`;
-      textarea.style.border = `1px solid #9ca3af`; // cinza neutro
-      textarea.style.borderRadius = `${4 * scale}px`;
-      textarea.style.outline = 'none';
-      textarea.style.resize = 'none';
-      textarea.style.lineHeight = '1.4';
-      textarea.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
-      textarea.style.transition = 'all 0.15s ease';
       textarea.style.fontFamily = `'Inter', sans-serif`;
-      textarea.value = currentText;
-            
+      textarea.style.fontStyle = fontStyle;
+      textarea.style.fontWeight = "400";
+      textarea.style.color = fill;
+      textarea.style.background = "transparent";
+      textarea.style.border = "none";
+      textarea.style.outline = "none";
+      textarea.style.padding = "0";
+      textarea.style.margin = "0";
+      textarea.style.resize = "none";
+      textarea.style.lineHeight = "1.3";
+      textarea.style.overflow = "hidden";
+      textarea.style.whiteSpace = "pre";
+      textarea.style.boxShadow = "none";
+      textarea.style.textAlign = align;
+      textarea.style.zIndex = "1000";
+      textarea.style.caretColor = fill;
+      textarea.style.transition = "opacity 0.15s ease-in-out";
+      textarea.style.opacity = "0";
+
       document.body.appendChild(textarea);
-      
-      // Configura os event listeners
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          handleSave(textarea);
-        } else if (e.key === 'Escape') {
-          handleCancel(textarea);
+
+      // 🎨 Fade-in suave
+      requestAnimationFrame(() => {
+        textarea.style.opacity = "1";
+      });
+
+      // 🧠 Funções auxiliares
+      const resizeTextarea = () => {
+        textarea.style.height = "auto";
+        textarea.style.width = "auto";
+
+        // Mede o texto atual
+        const context = document.createElement("canvas").getContext("2d");
+        if (context) {
+          context.font = `${fontStyle} ${fontSize * scale}px Inter, sans-serif`;
+          const metrics = context.measureText(textarea.value || "a");
+          const newWidth = Math.max(metrics.width + 10, width * scale);
+          textarea.style.width = `${newWidth}px`;
         }
-        
-        // Auto-ajusta a altura
-        setTimeout(() => {
-          textarea.style.height = 'auto';
-          textarea.style.height = `${textarea.scrollHeight}px`;
-        }, 0);
+
+        textarea.style.height = `${textarea.scrollHeight}px`;
       };
 
-      const handleClickOutside = (e: MouseEvent) => {
-        if (!textarea.contains(e.target as Node)) {
-          handleSave(textarea);
-        }
-      };
-
-      const handleBlur = () => {
-        handleSave(textarea);
-      };
-
-      const handleSave = (textareaElement: HTMLTextAreaElement) => {
-        const newValue = textareaElement.value;
-        cleanup(textareaElement);
+      const handleSave = () => {
+        const newValue = textarea.value.trim();
+        cleanup();
         onEditEnd(newValue);
       };
 
-      const handleCancel = (textareaElement: HTMLTextAreaElement) => {
-        cleanup(textareaElement);
-        setCurrentText(text);
+      const handleCancel = () => {
+        cleanup();
       };
 
-      const cleanup = (textareaElement: HTMLTextAreaElement) => {
-        // Remove event listeners
-        document.removeEventListener('mousedown', handleClickOutside);
-        textareaElement.removeEventListener('keydown', handleKeyDown);
-        textareaElement.removeEventListener('blur', handleBlur);
-        
-        // Remove o textarea
-        if (document.body.contains(textareaElement)) {
-          document.body.removeChild(textareaElement);
-        }
-        
-        setIsEditing(false);
-        if (textRef.current) {
-          textRef.current.show();
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSave();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          handleCancel();
+        } else {
+          resizeTextarea();
         }
       };
 
-      // Adiciona event listeners
-      textarea.addEventListener('keydown', handleKeyDown);
-      textarea.addEventListener('blur', handleBlur);
-      document.addEventListener('mousedown', handleClickOutside);
+      const handleInput = () => resizeTextarea();
 
-      // Auto-ajusta a altura inicial
-      setTimeout(() => {
-        textarea.style.height = 'auto';
-        textarea.style.height = `${textarea.scrollHeight}px`;
-      }, 0);
+      const handleClickOutside = (e: MouseEvent) => {
+        if (!textarea.contains(e.target as Node)) handleSave();
+      };
 
-      // Foca e seleciona o texto
+      const cleanup = () => {
+        textarea.style.opacity = "0";
+        setTimeout(() => {
+          document.removeEventListener("mousedown", handleClickOutside);
+          textarea.removeEventListener("keydown", handleKeyDown);
+          textarea.removeEventListener("input", handleInput);
+          if (document.body.contains(textarea)) document.body.removeChild(textarea);
+          textRef.current?.show();
+          setIsEditing(false);
+        }, 150);
+      };
+
+      textarea.addEventListener("keydown", handleKeyDown);
+      textarea.addEventListener("input", handleInput);
+      document.addEventListener("mousedown", handleClickOutside);
+
+      // Foco inicial
       setTimeout(() => {
+        resizeTextarea();
         textarea.focus();
-        textarea.select();
         textarea.setSelectionRange(textarea.value.length, textarea.value.length);
       }, 10);
-
-      return () => {
-        if (document.body.contains(textarea)) {
-          cleanup(textarea);
-        }
-      };
     }
-  }, [isEditingInternal, currentText, width, fontSize, x, y, fill, fontStyle, backgroundColor]);
+  }, [isEditingInternal]);
 
   useEffect(() => {
     if (isEditing) {
       setIsEditing(true);
+      onEditStart?.();
     }
   }, [isEditing]);
 
@@ -200,7 +192,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
         width={width}
         onDblClick={handleDblClick}
         onTap={handleDblClick}
-        align={align || 'left'}
+        align={align || "left"}
       />
     </Group>
   );

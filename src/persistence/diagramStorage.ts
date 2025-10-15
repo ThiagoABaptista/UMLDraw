@@ -11,9 +11,10 @@ export class DiagramStorage {
   // 📁 Salvar em arquivo .uml
   async saveToFile(diagram: UMLDiagram): Promise<boolean> {
     try {
+      const diagramName = diagram.metadata?.name?.trim() || "diagram";
       const uri = await vscode.window.showSaveDialog({
         filters: { 'UMLDraw': ['uml'] },
-        defaultUri: vscode.Uri.file('diagram.uml'),
+        defaultUri: vscode.Uri.file(`${diagramName}.uml`),
         saveLabel: 'Salvar Diagrama'
       });
 
@@ -26,6 +27,7 @@ export class DiagramStorage {
         viewport: { scale: 1, offset: { x: 0, y: 0 } }
       };
 
+      diagram.metadata.lastModified = new Date().toISOString();
       const data = JSON.stringify(diagramFile, null, 2);
       await vscode.workspace.fs.writeFile(uri, Buffer.from(data));
       

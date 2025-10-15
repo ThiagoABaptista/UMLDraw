@@ -1,5 +1,4 @@
-// src/hooks/useStageInteractions.ts
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import {
   Tool,
   UseCaseElement,
@@ -40,7 +39,6 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
     onMousePositionChange,
   } = props;
 
-  // Corrige coordenadas considerando pan e zoom
   const getCanvasCoords = (stage: any) => {
     const pointer = stage.getPointerPosition();
     if (!pointer) return { x: 0, y: 0 };
@@ -60,10 +58,11 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
       const stage = e.target.getStage();
       if (!stage) return;
 
+      // Se clicar no canvas vazio
       if (e.target === stage) {
+        // Cria novo elemento (modo criação)
         if (creationState === "placing" && tool !== "select" && tool !== "relationship") {
           const pos = getCanvasCoords(stage);
-
           const newElement = createNewElement(tool, pos.x, pos.y);
 
           updateDiagram((prev: UMLDiagram) => ({
@@ -74,12 +73,17 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
           setSelectedElement(newElement.id);
           setCreationState("idle");
           setTool("select");
-        } else if (connectionState !== "idle") {
+          return;
+        }
+
+        // Cancela conexão, edição, e limpa seleção
+        if (connectionState !== "idle") {
           setConnectionState("idle");
           setConnectionStart(null);
         }
 
         clearEditingState();
+        setSelectedElement(null); // 👉 mostra infos do diagrama
       }
     },
     [
@@ -107,6 +111,27 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
     },
     [onMousePositionChange]
   );
+
+  useEffect(() => {
+    const cancelListener = () => {
+      setCreationState("idle");
+      setTool("select");
+      setConnectionState("idle");
+      setConnectionStart(null);
+      clearEditingState();
+      setSelectedElement(null);
+    };
+
+    window.addEventListener("cancel-creation", cancelListener);
+    return () => window.removeEventListener("cancel-creation", cancelListener);
+  }, [
+    setCreationState,
+    setTool,
+    setConnectionState,
+    setConnectionStart,
+    clearEditingState,
+    setSelectedElement,
+  ]);
 
   return { handleStageClick, handleMouseMove };
 };

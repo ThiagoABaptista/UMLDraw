@@ -1,10 +1,21 @@
 import React from "react";
-import { Group, Path, Rect } from "react-konva";
+import { Group, Rect } from "react-konva";
 import { ActivityElement, UseCaseElement } from "../types/umlTypes";
-import { umlSvgContent } from "../utils/iconMapping";
 import { umlSvgColors } from "../types/umlSvgColors";
-import { parseSvgContent } from "../utils/svgParser";
 import { getElementDefaults } from "../utils/diagramDefaults";
+
+// Funções de desenho baseadas no canvas
+import {
+  drawActor,
+  drawUseCase,
+  drawActivity,
+  drawStart,
+  drawEnd,
+  drawDecision,
+  drawMerge,
+  drawFork,
+  drawJoin,
+} from "./UMLShapes";
 
 interface GaphorIconProps {
   element: UseCaseElement | ActivityElement;
@@ -15,6 +26,9 @@ interface GaphorIconProps {
   isSelected?: boolean;
 }
 
+/**
+ * 🧠 GaphorIcon - desenha os ícones UML diretamente no Canvas (Konva)
+ */
 export const GaphorIcon: React.FC<GaphorIconProps> = ({
   element,
   x,
@@ -23,62 +37,50 @@ export const GaphorIcon: React.FC<GaphorIconProps> = ({
   height,
   isSelected = false,
 }) => {
-  const svgContent = umlSvgContent[element.type];
-  if (!svgContent) return null;
+  const defaults = getElementDefaults(element.type);
+  const color = umlSvgColors[element.type] || "#111827";
+  const scale = defaults.scaleBoost ?? 1.0;
+  const strokeWidth = Math.max(1, 1.5 * scale);
 
-  try {
-    const { paths, viewBox, translate } = parseSvgContent(svgContent);
-    const color = umlSvgColors[element.type] || "#111827";
-    if (paths.length === 0) return null;
+  // 🔁 Escolhe a função de desenho conforme o tipo UML
+  const renderShape = () => {
+    console.log("Rendering shape:", element.type, { width, height, scale });
+    switch (element.type) {
+      case "actor":
+        return drawActor(x, y, width, height, color, strokeWidth, isSelected);
+      case "usecase":
+        return drawUseCase(x, y, width, height, color, strokeWidth, isSelected);
+      case "activity":
+        return drawActivity(x, y, width, height, color, strokeWidth, isSelected);
+      case "decision":
+        return drawDecision(x, y, width, height, color, strokeWidth, isSelected);
+      case "start":
+        return drawStart(x, y, width, height, color, strokeWidth, isSelected);
+      case "end":
+        return drawEnd(x, y, width, height, color, strokeWidth, isSelected);
+      case "fork":
+        return drawFork(x, y, width, height, color, strokeWidth, isSelected);
+      case "join":
+        return drawJoin(x, y, width, height, color, strokeWidth, isSelected);
+      case "merge":
+        return drawMerge(x, y, width, height, color, strokeWidth, isSelected);
 
-    const defaults = getElementDefaults(element.type);
-    const baseScale = Math.min(width / viewBox.width, height / viewBox.height);
-    const scale = baseScale * defaults.scaleBoost;
+      default:
+        return (
+          <Group x={x} y={y} listening>
+            <Rect
+              x={0}
+              y={0}
+              width={width}
+              height={height}
+              stroke={color}
+              strokeWidth={strokeWidth}
+              fillEnabled={false}
+            />
+          </Group>
+        );
+    }
+  };
 
-    const finalWidth = viewBox.width * scale;
-    const finalHeight = viewBox.height * scale;
-    const offsetX = (width - finalWidth) / 2;
-    const offsetY = (height - finalHeight) / 2;
-
-    const tx = translate.x - viewBox.minX;
-    const ty = translate.y - viewBox.minY;
-
-    return (
-      <Group
-        x={x + offsetX}
-        y={y + offsetY}
-        scaleX={scale}
-        scaleY={scale}
-        listening={true}
-      >
-        {paths.map((d, idx) => (
-          <Path
-            key={idx}
-            data={d}
-            x={tx}
-            y={ty}
-            fill={color}
-            stroke={isSelected ? "#6366f1" : "transparent"}
-            strokeWidth={isSelected ? 2 / Math.max(scale, 0.0001) : 0}
-            perfectDrawEnabled={false}
-            listening={true}
-          />
-        ))}
-
-        {/* Mantém o Rect de debug visível mas leve */}
-        <Rect
-          x={0}
-          y={0}
-          width={viewBox.width}
-          height={viewBox.height}
-          stroke="red"
-          strokeWidth={0.15 / Math.max(scale, 0.0001)}
-          listening={false}
-        />
-      </Group>
-    );
-  } catch (err) {
-    console.error("❌ Erro ao renderizar GaphorIcon:", err);
-    return null;
-  }
+  return renderShape();
 };

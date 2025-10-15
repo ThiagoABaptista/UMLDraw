@@ -45,6 +45,7 @@ export interface DiagramMetadata {
   created: string;
   lastModified: string;
   type: 'usecase' | 'activity';
+  comments?: string; // 🆕 Adicionado para permitir notas do diagrama
 }
 
 export interface DiagramFile {

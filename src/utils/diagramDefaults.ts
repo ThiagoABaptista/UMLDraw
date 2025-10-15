@@ -6,8 +6,8 @@ export interface ElementDefaults {
 
 export const UML_DEFAULTS: Record<string, ElementDefaults> = {
   // === Diagrama de Caso de Uso ===
-  actor:    { width: 60,  height: 120, scaleBoost: 3.0 },
-  usecase:  { width: 140, height: 70,  scaleBoost: 1.8 },
+  actor:    { width: 70,  height: 70, scaleBoost: 3.0 },
+  usecase:  { width: 140, height: 100,  scaleBoost: 1.8 },
 
   // === Diagrama de Atividade ===
   start:    { width: 40,  height: 40,  scaleBoost: 2.0 },

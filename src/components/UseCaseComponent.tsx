@@ -27,11 +27,17 @@ export const UseCaseComponent: React.FC<UseCaseComponentProps> = ({
   const getTextPosition = () => {
     switch (element.type) {
       case "actor":
+        // ator mantém o texto abaixo
         return { x: 0, y: element.height + 10, width: element.width };
       case "usecase":
-        return { x: 10, y: element.height + 6, width: element.width - 20 };
+        // centraliza dentro da elipse
+        return {
+          x: 0,
+          y: element.height / 2 - 8, // central verticalmente
+          width: element.width,
+        };
       default:
-        return { x: 0, y: element.height + 6, width: element.width };
+        return { x: 0, y: element.height / 2 - 8, width: element.width };
     }
   };
 

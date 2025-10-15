@@ -16,16 +16,17 @@ import { useCanvasResize } from "../hooks/useCanvasResize";
 import { useMousePosition } from "../hooks/useMousePosition";
 import { useStageZoom } from "../hooks/useStageZoom";
 import { useStageDragFeedback } from "../hooks/useStageDragFeedback";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 
 import { ExportService } from "../services/exportService";
-import { UMLDiagram, UseCaseElement, ActivityElement } from "../types/umlTypes";
+import { UMLDiagram, UseCaseElement, ActivityElement, UMLRelationship } from "../types/umlTypes";
 import { GridBackground } from "../components/GridBackground";
-
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { Sidebar } from "../components/Sidebar";
 
 export default function App() {
   const [diagramType, setDiagramType] = useState<"usecase" | "activity">("usecase");
+  const [showSidebar, setShowSidebar] = useState(true); // ✅ sidebar responsiva
 
   // 🎛️ Estado e hooks principais
   const diagramState = useDiagramState();
@@ -36,6 +37,7 @@ export default function App() {
     updateDiagram: diagramState.updateDiagram,
   });
   const [mousePosLocal, setMousePosLocal] = useState({ x: 0, y: 0 });
+  const [selectedRelationship, setSelectedRelationship] = useState<UMLRelationship | null>(null);
 
   const operations = useDiagramOperations(
     {
@@ -55,16 +57,22 @@ export default function App() {
       setConnectionStart: diagramState.setConnectionStart,
       updateDiagram: diagramState.updateDiagram,
       clearEditingState: diagramState.clearEditingState,
+      selectedRelationshipType: diagramState.selectedRelationshipType,
     },
     diagramType
   );
 
+  // 📡 Comunicação com VSCode — ajustado pra usar nome do diagrama
   const vsCodeComm = useVSCodeCommunication(
     diagramState.diagram,
     diagramType,
     (diagram) => {
       diagramState.setDiagram(diagram);
       setDiagramType(diagram.metadata.type);
+    },
+    () => {
+      const fileName = `${diagramState.diagram.metadata.name || "Diagrama"}.uml`;
+      return fileName;
     }
   );
 
@@ -83,14 +91,14 @@ export default function App() {
     onMousePositionChange: setMousePosLocal
   });
 
-  // confirm dialog state
+  // 🔒 Diálogo de confirmação de exclusão
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
     message: string;
     onConfirm?: () => void;
   }>({ open: false, message: '', onConfirm: undefined });
 
-  // keyboard shortcuts: delete key triggers delete flow
+  // ⌨️ Atalhos do teclado
   useKeyboardShortcuts({
     onDelete: () => {
       if (!diagramState.selectedElement) return;
@@ -98,13 +106,13 @@ export default function App() {
     }
   });
 
-  // export functions
+  // 📤 Exportar PNG
   const handleExportPNG = async () => {
     try {
       const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
       if (!stageContainer) throw new Error("Container do diagrama não encontrado");
 
-      await ExportService.exportToPNG(stageContainer, `diagrama-${diagramType}.png`);
+      await ExportService.exportToPNG(stageContainer, `${diagramState.diagram.metadata.name || "diagrama"}.png`);
       vsCodeComm.showMessage("info", "Diagrama exportado como PNG com sucesso!");
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Erro desconhecido";
@@ -112,12 +120,13 @@ export default function App() {
     }
   };
 
+  // 📄 Exportar PDF
   const handleExportPDF = async () => {
     try {
       const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
       if (!stageContainer) throw new Error("Container do diagrama não encontrado");
 
-      await ExportService.exportToPDF(stageContainer, `diagrama-${diagramType}.pdf`);
+      await ExportService.exportToPDF(stageContainer, `${diagramState.diagram.metadata.name || "diagrama"}.pdf`);
       vsCodeComm.showMessage("info", "Diagrama exportado como PDF com sucesso!");
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Erro desconhecido";
@@ -125,11 +134,18 @@ export default function App() {
     }
   };
 
-  // control preview
+  // 👁️ Pré-visualização do elemento durante a criação
   const shouldShowPreview = diagramState.creationState === "placing";
 
+  // 🔄 Trocar tipo de diagrama (caso de uso / atividade)
   const handleDiagramTypeChange = (type: "usecase" | "activity") => {
     setDiagramType(type);
+    diagramState.setTool('select');
+    if (type === 'usecase') {
+      diagramState.setSelectedRelationshipType('association');
+    } else {
+      diagramState.setSelectedRelationshipType('control_flow');
+    }
     diagramState.setDiagram({
       metadata: {
         version: "1.0",
@@ -143,9 +159,9 @@ export default function App() {
     });
   };
 
-  // DELETE flow: request -> if needs confirm show dialog -> execute
+  // 🗑️ Fluxo de exclusão
   const handleDeleteRequest = (id: string) => {
-    const prepared = operations.prepareDeleteElement(id);
+    const prepared = operations.prepareDeleteItem(id);
     if (prepared.needsConfirm) {
       setConfirmState({
         open: true,
@@ -156,18 +172,19 @@ export default function App() {
         }
       });
     } else {
-      // execute immediately
       prepared.execute();
     }
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {/* Toolbar com botão de sidebar */}
       <Toolbar
         tool={diagramState.tool}
         onToolChange={operations.handleToolChange}
         onToggleEdit={operations.handleToggleEdit}
         onSave={vsCodeComm.handleSave}
+        onSaveAs={vsCodeComm.handleSaveAs}
         onLoad={vsCodeComm.handleLoad}
         onExportPNG={handleExportPNG}
         onExportPDF={handleExportPDF}
@@ -179,93 +196,114 @@ export default function App() {
         creationState={diagramState.creationState}
         connectionState={diagramState.connectionState}
         diagramType={diagramType}
+        selectedRelationshipType={diagramState.selectedRelationshipType}
+        onRelationshipTypeChange={diagramState.setSelectedRelationshipType}
         onDiagramTypeChange={handleDiagramTypeChange}
+        onToggleSidebar={() => setShowSidebar((prev) => !prev)} // ✅ botão da toolbar
+        showSidebar={showSidebar}
       />
 
-      <Stage
-        width={stageSize.width}
-        height={stageSize.height}
-        draggable
-        onWheel={(e) => {
-          handleStagePan(e);
-          handleStageWheel(e);
-        }}
-        onClick={stageInteractions.handleStageClick}
-        onTap={stageInteractions.handleStageClick}
-        onDblClick={handleDoubleClick}
-        onMouseMove={stageInteractions.handleMouseMove}
-      >
-        {/* GRID de fundo */}
-        <Layer listening={false}>
-          <GridBackground width={stageSize.width} height={stageSize.height} gridSize={25} />
-        </Layer>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* 🧭 Canvas ajustável */}
+        <div
+          style={{
+            flex: "1 1 auto",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <Stage
+            width={showSidebar ? stageSize.width - 280 : stageSize.width}
+            height={stageSize.height}
+            draggable
+            onWheel={(e) => {
+              handleStagePan(e);
+              handleStageWheel(e);
+            }}
+            onClick={stageInteractions.handleStageClick}
+            onTap={stageInteractions.handleStageClick}
+            onDblClick={handleDoubleClick}
+            onMouseMove={stageInteractions.handleMouseMove}
+          >
+            <Layer listening={false}>
+              <GridBackground width={stageSize.width} height={stageSize.height} gridSize={25} />
+            </Layer>
 
-        {/* LAYER principal */}
-        <Layer>
-          {shouldShowPreview && (
-            <ElementPreview
-              tool={diagramState.tool}
-              x={mousePosLocal.x}
-              y={mousePosLocal.y}
-              size={40}
-              visible={true}
-            />
-          )}
-
-          {/* Relacionamentos */}
-          {diagramState.diagram.relationships.map((rel) => {
-            const fromElement = diagramState.diagram.elements.find((e) => e.id === rel.from);
-            const toElement = diagramState.diagram.elements.find((e) => e.id === rel.to);
-            if (!fromElement || !toElement) return null;
-
-            return (
-              <UMLRelationshipComponent
-                key={rel.id}
-                relationship={rel}
-                fromElement={fromElement}
-                toElement={toElement}
-                isSelected={diagramState.selectedElement === rel.id}
-                onClick={operations.handleElementClick}
-                diagramType={diagramType}
-              />
-            );
-          })}
-
-          {/* Elementos */}
-          {diagramState.diagram.elements.map((element) => {
-            if (diagramType === "usecase") {
-              return (
-                <UseCaseComponent
-                  key={element.id}
-                  element={element as UseCaseElement}
-                  onDragMove={handleDragMove}
-                  onDragEnd={operations.handleElementDragEnd}
-                  onClick={operations.handleElementClick}
-                  onTextEdit={operations.handleTextEdit}
-                  isSelected={diagramState.selectedElement === element.id}
+            <Layer>
+              {shouldShowPreview && (
+                <ElementPreview
+                  tool={diagramState.tool}
+                  x={mousePosLocal.x}
+                  y={mousePosLocal.y}
+                  size={40}
+                  visible={true}
                 />
-              );
-            } else if (diagramType === "activity") {
-              return (
-                <ActivityComponent
-                  key={element.id}
-                  element={element as ActivityElement}
-                  onDragMove={handleDragMove}
-                  onDragEnd={operations.handleElementDragEnd}
-                  onClick={operations.handleElementClick}
-                  onTextEdit={operations.handleTextEdit}
-                  isSelected={diagramState.selectedElement === element.id}
-                />
-              );
-            }
-            return null;
-          })}
+              )}
 
-          {/* Layer de debug opcional */}
-          <DebugLayer diagram={diagramState.diagram} enabled={false} />
-        </Layer>
-      </Stage>
+              {/* Relacionamentos */}
+              {diagramState.diagram.relationships.map((rel) => {
+                const fromElement = diagramState.diagram.elements.find((e) => e.id === rel.from);
+                const toElement = diagramState.diagram.elements.find((e) => e.id === rel.to);
+                if (!fromElement || !toElement) return null;
 
+                return (
+                  <UMLRelationshipComponent
+                    key={rel.id}
+                    relationship={rel}
+                    fromElement={fromElement}
+                    toElement={toElement}
+                    isSelected={diagramState.selectedElement === rel.id}
+                    onClick={operations.handleElementClick}
+                    diagramType={diagramType}
+                  />
+                );
+              })}
+
+              {/* Elementos */}
+              {diagramState.diagram.elements.map((element) => {
+                if (diagramType === "usecase") {
+                  return (
+                    <UseCaseComponent
+                      key={element.id}
+                      element={element as UseCaseElement}
+                      onDragMove={handleDragMove}
+                      onDragEnd={operations.handleElementDragEnd}
+                      onClick={operations.handleElementClick}
+                      onTextEdit={operations.handleTextEdit}
+                      isSelected={diagramState.selectedElement === element.id}
+                    />
+                  );
+                } else if (diagramType === "activity") {
+                  return (
+                    <ActivityComponent
+                      key={element.id}
+                      element={element as ActivityElement}
+                      onDragMove={handleDragMove}
+                      onDragEnd={operations.handleElementDragEnd}
+                      onClick={operations.handleElementClick}
+                      onTextEdit={operations.handleTextEdit}
+                      isSelected={diagramState.selectedElement === element.id}
+                    />
+                  );
+                }
+                return null;
+              })}
+            </Layer>
+          </Stage>
+        </div>
+
+        {/* 🧱 Sidebar visível apenas se showSidebar = true */}
+        {showSidebar && (
+          <Sidebar
+            selectedId={diagramState.selectedElement}
+            diagram={diagramState.diagram}
+            onUpdate={(newDiagram) => diagramState.updateDiagram(() => newDiagram)}
+            onClearSelection={() => diagramState.setSelectedElement(null)}
+          />
+        )}
+      </div>
+
+      {/* 🔒 Diálogo de confirmação */}
       <ConfirmDialog
         open={confirmState.open}
         title="Excluir elemento"

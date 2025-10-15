@@ -27,11 +27,11 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
   const getTextPosition = () => {
     switch (element.type) {
       case "activity":
-        return { x: 0, y: element.height + 8, width: element.width, showText: true };
+        return { x: 0, y: element.height / 2 - 8, width: element.width, showText: true };
       case "decision":
-        return { x: 0, y: element.height + 6, width: element.width, showText: false };
+        return { x: 0, y: element.height / 2 - 8, width: element.width, showText: true };
       default:
-        return { x: 0, y: element.height + 6, width: element.width, showText: false };
+        return { x: 0, y: element.height / 2 - 8, width: element.width, showText: false };
     }
   };
 

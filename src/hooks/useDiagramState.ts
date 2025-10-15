@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { UMLDiagram, Tool, CreationState, ConnectionState, UseCaseElement, ActivityElement, UMLRelationship } from '../types/umlTypes';
+import { RelationshipType } from '../types/umlTypes';
+import { getElementDefaults } from '../utils/diagramDefaults';
 
 const initialDiagram: UMLDiagram = {
     metadata: {
@@ -16,8 +18,8 @@ const initialDiagram: UMLDiagram = {
             name: 'Usuário',
             x: 100,
             y: 100,
-            width: 60,
-            height: 100
+            width: getElementDefaults('actor').width,
+            height: getElementDefaults('actor').height
         },
         {
             id: '2',
@@ -25,8 +27,8 @@ const initialDiagram: UMLDiagram = {
             name: 'Realizar Login',
             x: 300,
             y: 120,
-            width: 100,
-            height: 40
+            width: getElementDefaults('usecase').width,
+            height: getElementDefaults('usecase').height
         }
     ],
     relationships: [
@@ -48,6 +50,8 @@ export const useDiagramState = () => {
     const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
     const [connectionStart, setConnectionStart] = useState<string | null>(null);
 
+    const [selectedRelationshipType, setSelectedRelationshipType] =
+        useState<RelationshipType>('association');
     const updateDiagram = useCallback((updater: (prev: UMLDiagram) => UMLDiagram) => {
         setDiagram(updater);
     }, []);
@@ -71,6 +75,8 @@ export const useDiagramState = () => {
         creationState,
         connectionState,
         connectionStart,
+        selectedRelationshipType,
+        setSelectedRelationshipType,
         setDiagram,
         setSelectedElement,
         setTool,

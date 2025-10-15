@@ -32,7 +32,9 @@ interface DiagramOperationsProps {
 }
 
 export const useDiagramOperations = (
-  props: DiagramOperationsProps,
+  props: DiagramOperationsProps & {
+    selectedRelationshipType?: RelationshipType;
+  },
   diagramType: 'usecase' | 'activity'
 ) => {
   const {
@@ -43,6 +45,7 @@ export const useDiagramOperations = (
     creationState,
     connectionState,
     connectionStart,
+    selectedRelationshipType = 'association',
     setSelectedElement,
     setTool,
     setIsEditing,
@@ -55,12 +58,7 @@ export const useDiagramOperations = (
 
   // cria relacionamento padrão dependendo do tipo de diagrama
   const createNewRelationship = useCallback((from: string, to: string): UMLRelationship => {
-    let relationshipType: RelationshipType;
-    if (diagramType === 'activity') {
-      relationshipType = 'control_flow';
-    } else {
-      relationshipType = 'association';
-    }
+    const relationshipType = selectedRelationshipType;
     return {
       id: Date.now().toString(),
       from,
@@ -68,7 +66,7 @@ export const useDiagramOperations = (
       type: relationshipType,
       label: getDefaultRelationshipLabel(relationshipType)
     };
-  }, [diagramType]);
+  }, [selectedRelationshipType]);
 
   const handleElementDragEnd = useCallback((id: string, x: number, y: number) => {
     updateDiagram((prev: UMLDiagram) => ({
@@ -169,6 +167,7 @@ export const useDiagramOperations = (
   const createNewElement = useCallback(
     (toolParam: Tool, x: number, y: number): UseCaseElement | ActivityElement => {
       const defaults = getElementDefaults(toolParam);
+      console.log("Creating new element:", toolParam, { x, y, defaults });
 
       const baseElement = {
         id: uuidv4(),
@@ -188,27 +187,44 @@ export const useDiagramOperations = (
     [diagramType]
   );
 
-  // --- DELEÇÃO: prepara e executa ---
-  // prepareDeleteElement retorna um objeto que diz se precisa de confirmação
-  // e também uma função execute() que realiza a remoção (já atualizando o diagrama).
-  const prepareDeleteElement = useCallback((id: string) => {
-    const rels = diagram.relationships.filter(r => r.from === id || r.to === id);
-    const needsConfirm = rels.length > 0;
+  // --- DELEÇÃO UNIFICADA ---
+  const prepareDeleteItem = useCallback((id: string) => {
+    const isElement = diagram.elements.some(e => e.id === id);
+    const isRelationship = diagram.relationships.some(r => r.id === id);
 
-    const execute = () => {
-      updateDiagram((prev: UMLDiagram) => ({
-        ...prev,
-        elements: prev.elements.filter(e => e.id !== id),
-        relationships: prev.relationships.filter(r => r.from !== id && r.to !== id)
-      }));
-      // se o elemento deletado estava selecionado, limpa seleção
-      if (selectedElement === id) {
-        setSelectedElement(null);
-      }
-    };
+    if (isRelationship) {
+      // deletar relação diretamente
+      const execute = () => {
+        updateDiagram(prev => ({
+          ...prev,
+          relationships: prev.relationships.filter(r => r.id !== id),
+        }));
+        if (selectedElement === id) setSelectedElement(null);
+      };
 
-    return { needsConfirm, relatedCount: rels.length, execute };
-  }, [diagram.relationships, updateDiagram, selectedElement, setSelectedElement]);
+      return { needsConfirm: false, relatedCount: 0, execute };
+    }
+
+    if (isElement) {
+      const rels = diagram.relationships.filter(r => r.from === id || r.to === id);
+      const needsConfirm = rels.length > 0;
+
+      const execute = () => {
+        updateDiagram(prev => ({
+          ...prev,
+          elements: prev.elements.filter(e => e.id !== id),
+          relationships: prev.relationships.filter(r => r.from !== id && r.to !== id)
+        }));
+        if (selectedElement === id) setSelectedElement(null);
+      };
+
+      return { needsConfirm, relatedCount: rels.length, execute };
+    }
+
+    // fallback — nada encontrado
+    return { needsConfirm: false, relatedCount: 0, execute: () => {} };
+  }, [diagram, updateDiagram, selectedElement, setSelectedElement]);
+
 
   // helpers
   const getDefaultName = (toolParam: Tool): string => {
@@ -248,6 +264,6 @@ export const useDiagramOperations = (
     handleToggleEdit,
     createNewElement,
     createNewRelationship,
-    prepareDeleteElement
+    prepareDeleteItem
   };
 };
