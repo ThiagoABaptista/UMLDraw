@@ -1,5 +1,5 @@
-import { useCallback, useEffect } from 'react';
-import { UMLDiagram } from '../types/umlTypes';
+import { useCallback, useEffect } from "react";
+import { UMLDiagram } from "../types/umlTypes";
 
 declare global {
   interface Window {
@@ -15,81 +15,75 @@ const vscodePostMessage = (message: any) => {
   }
 };
 
-const showMessage = (type: 'info' | 'error', text: string) => {
+const showMessage = (type: "info" | "error", text: string) => {
   vscodePostMessage({
-    command: type === 'info' ? 'showInfo' : 'showError',
-    text
+    command: type === "info" ? "showInfo" : "showError",
+    text,
   });
 };
 
 /**
- * Hook para comunicação com o VSCode Webview
- * Agora aceita opcionalmente uma função `getFileName` para salvar com nome personalizado.
+ * Hook para comunicação com o VSCode Webview.
  */
 export const useVSCodeCommunication = (
   diagram: UMLDiagram,
-  diagramType: 'usecase' | 'activity',
+  diagramType: "usecase" | "activity",
   onDiagramLoaded: (diagram: UMLDiagram) => void,
-  getFileName?: () => string // ← novo argumento opcional
+  getFileName?: () => string
 ) => {
+  const buildDiagramPayload = useCallback(() => {
+    return {
+      ...diagram,
+      metadata: {
+        version: diagram.metadata?.version || "1.0",
+        name: diagram.metadata?.name || "Novo Diagrama",
+        created: diagram.metadata?.created || new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        type: diagramType,
+        comments: diagram.metadata?.comments || "",
+      },
+    };
+  }, [diagram, diagramType]);
+
   const handleSaveToFile = useCallback(() => {
-    const fileName = getFileName ? getFileName() : `${diagram.metadata.name || 'Diagrama'}.uml`;
+    const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
 
     vscodePostMessage({
-      command: 'saveToFile',
-      diagram,
-      fileName // envia nome do arquivo ao backend
+      command: "saveToFile",
+      diagram: buildDiagramPayload(),
+      fileName,
     });
-  }, [diagram, getFileName]);
+  }, [diagram, getFileName, buildDiagramPayload]);
 
   const handleSaveToWorkspace = useCallback(() => {
     vscodePostMessage({
-      command: 'saveToWorkspace',
-      diagram
+      command: "saveToWorkspace",
+      diagram: buildDiagramPayload(),
     });
-  }, [diagram]);
+  }, [diagram, buildDiagramPayload]);
 
   const handleSave = useCallback(() => {
-    const fileName = getFileName ? getFileName() : `${diagram.metadata.name || 'Diagrama'}.uml`;
+    const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
 
     vscodePostMessage({
-      command: 'saveToFile',
-      diagram: {
-        ...diagram,
-        metadata: {
-          version: diagram.metadata?.version || '1.0',
-          name: diagram.metadata?.name || 'Novo Diagrama',
-          created: diagram.metadata?.created || new Date().toISOString(),
-          lastModified: new Date().toISOString(),
-          type: diagramType
-        }
-      },
-      fileName
+      command: "saveToFile",
+      diagram: buildDiagramPayload(),
+      fileName,
     });
-  }, [diagram, diagramType, getFileName]);
+  }, [diagram, getFileName, buildDiagramPayload]);
 
   const handleSaveAs = useCallback(() => {
-    const fileName = getFileName ? getFileName() : `${diagram.metadata.name || 'Diagrama'}.uml`;
+    const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
 
-        vscodePostMessage({
-            command: 'saveAsFile', // novo comando específico
-            diagram: {
-            ...diagram,
-            metadata: {
-                version: diagram.metadata?.version || '1.0',
-                name: diagram.metadata?.name || 'Novo Diagrama',
-                created: diagram.metadata?.created || new Date().toISOString(),
-                lastModified: new Date().toISOString(),
-                type: diagramType
-            }
-            },
-            fileName
-        });
-    }, [diagram, diagramType, getFileName]);
-
+    vscodePostMessage({
+      command: "saveAsFile", // comando separado
+      diagram: buildDiagramPayload(),
+      fileName,
+    });
+  }, [diagram, getFileName, buildDiagramPayload]);
 
   const handleLoad = useCallback(() => {
-    vscodePostMessage({ command: 'requestLoad' });
+    vscodePostMessage({ command: "requestLoad" });
   }, []);
 
   useEffect(() => {
@@ -97,12 +91,12 @@ export const useVSCodeCommunication = (
       const message = event.data;
 
       switch (message.command) {
-        case 'saveDiagram':
+        case "saveDiagram":
           handleSaveToFile();
           break;
 
-        case 'loadDiagram':
-        case 'loadInitialDiagram':
+        case "loadDiagram":
+        case "loadInitialDiagram":
           if (message.diagram) {
             onDiagramLoaded(message.diagram);
           }
@@ -110,10 +104,10 @@ export const useVSCodeCommunication = (
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    vscodePostMessage({ command: 'requestInitialDiagram' });
+    window.addEventListener("message", handleMessage);
+    vscodePostMessage({ command: "requestInitialDiagram" });
 
-    return () => window.removeEventListener('message', handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [handleSaveToFile, onDiagramLoaded]);
 
   return {
@@ -122,6 +116,6 @@ export const useVSCodeCommunication = (
     handleSave,
     handleSaveAs,
     handleLoad,
-    showMessage
+    showMessage,
   };
 };

@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { Stage, Layer } from "react-konva";
-
 import { Toolbar } from "../components/Toolbar";
 import { UMLRelationshipComponent } from "../components/UMLRelationship";
 import { UseCaseComponent } from "../components/UseCaseComponent";
 import { ActivityComponent } from "../components/ActivityComponent";
 import { ElementPreview } from "../components/ElementPreview";
 import { DebugLayer } from "../hooks/useDebugLayer";
-
 import { useDiagramState } from "../hooks/useDiagramState";
 import { useDiagramOperations } from "../hooks/useDiagramOperations";
 import { useVSCodeCommunication } from "../hooks/useVSCodeCommunication";
@@ -17,7 +15,6 @@ import { useMousePosition } from "../hooks/useMousePosition";
 import { useStageZoom } from "../hooks/useStageZoom";
 import { useStageDragFeedback } from "../hooks/useStageDragFeedback";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-
 import { ExportService } from "../services/exportService";
 import { UMLDiagram, UseCaseElement, ActivityElement, UMLRelationship } from "../types/umlTypes";
 import { GridBackground } from "../components/GridBackground";
@@ -26,18 +23,14 @@ import { Sidebar } from "../components/Sidebar";
 
 export default function App() {
   const [diagramType, setDiagramType] = useState<"usecase" | "activity">("usecase");
-  const [showSidebar, setShowSidebar] = useState(true); // ✅ sidebar responsiva
+  const [showSidebar, setShowSidebar] = useState(true);
 
-  // 🎛️ Estado e hooks principais
   const diagramState = useDiagramState();
   const { mousePosition } = useMousePosition();
   const { handleStageWheel, handleStagePan, handleDoubleClick } = useStageZoom();
   const stageSize = useCanvasResize(50);
-  const { handleDragMove } = useStageDragFeedback({
-    updateDiagram: diagramState.updateDiagram,
-  });
+  const { handleDragMove } = useStageDragFeedback({ updateDiagram: diagramState.updateDiagram });
   const [mousePosLocal, setMousePosLocal] = useState({ x: 0, y: 0 });
-  const [selectedRelationship, setSelectedRelationship] = useState<UMLRelationship | null>(null);
 
   const operations = useDiagramOperations(
     {
@@ -62,7 +55,7 @@ export default function App() {
     diagramType
   );
 
-  // 📡 Comunicação com VSCode — ajustado pra usar nome do diagrama
+  // Comunicação com VSCode
   const vsCodeComm = useVSCodeCommunication(
     diagramState.diagram,
     diagramType,
@@ -70,10 +63,7 @@ export default function App() {
       diagramState.setDiagram(diagram);
       setDiagramType(diagram.metadata.type);
     },
-    () => {
-      const fileName = `${diagramState.diagram.metadata.name || "Diagrama"}.uml`;
-      return fileName;
-    }
+    () => `${diagramState.diagram.metadata.name || "Diagrama"}.uml`
   );
 
   const stageInteractions = useStageInteractions({
@@ -88,64 +78,53 @@ export default function App() {
     setConnectionState: diagramState.setConnectionState,
     setConnectionStart: diagramState.setConnectionStart,
     clearEditingState: diagramState.clearEditingState,
-    onMousePositionChange: setMousePosLocal
+    onMousePositionChange: setMousePosLocal,
   });
 
-  // 🔒 Diálogo de confirmação de exclusão
-  const [confirmState, setConfirmState] = useState<{
-    open: boolean;
-    message: string;
-    onConfirm?: () => void;
-  }>({ open: false, message: '', onConfirm: undefined });
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    message: "",
+    onConfirm: undefined as (() => void) | undefined,
+  });
 
-  // ⌨️ Atalhos do teclado
+  // Atalhos
   useKeyboardShortcuts({
     onDelete: () => {
       if (!diagramState.selectedElement) return;
       handleDeleteRequest(diagramState.selectedElement);
-    }
+    },
   });
 
-  // 📤 Exportar PNG
   const handleExportPNG = async () => {
     try {
       const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
       if (!stageContainer) throw new Error("Container do diagrama não encontrado");
-
       await ExportService.exportToPNG(stageContainer, `${diagramState.diagram.metadata.name || "diagrama"}.png`);
       vsCodeComm.showMessage("info", "Diagrama exportado como PNG com sucesso!");
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Erro desconhecido";
-      vsCodeComm.showMessage("error", `Erro ao exportar PNG: ${msg}`);
+      vsCodeComm.showMessage("error", `Erro ao exportar PNG: ${(error as Error).message}`);
     }
   };
 
-  // 📄 Exportar PDF
   const handleExportPDF = async () => {
     try {
       const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
       if (!stageContainer) throw new Error("Container do diagrama não encontrado");
-
-      await ExportService.exportToPDF(stageContainer, `${diagramState.diagram.metadata.name || "diagrama"}.pdf`);
+      await ExportService.exportToPDF(
+        stageContainer,
+        `${diagramState.diagram.metadata.name || "diagrama"}.pdf`,
+        diagramState.diagram.metadata.comments || ""
+      );
       vsCodeComm.showMessage("info", "Diagrama exportado como PDF com sucesso!");
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Erro desconhecido";
-      vsCodeComm.showMessage("error", `Erro ao exportar PDF: ${msg}`);
+      vsCodeComm.showMessage("error", `Erro ao exportar PDF: ${(error as Error).message}`);
     }
   };
 
-  // 👁️ Pré-visualização do elemento durante a criação
-  const shouldShowPreview = diagramState.creationState === "placing";
-
-  // 🔄 Trocar tipo de diagrama (caso de uso / atividade)
   const handleDiagramTypeChange = (type: "usecase" | "activity") => {
     setDiagramType(type);
-    diagramState.setTool('select');
-    if (type === 'usecase') {
-      diagramState.setSelectedRelationshipType('association');
-    } else {
-      diagramState.setSelectedRelationshipType('control_flow');
-    }
+    diagramState.setTool("select");
+    diagramState.setSelectedRelationshipType(type === "usecase" ? "association" : "control_flow");
     diagramState.setDiagram({
       metadata: {
         version: "1.0",
@@ -159,7 +138,6 @@ export default function App() {
     });
   };
 
-  // 🗑️ Fluxo de exclusão
   const handleDeleteRequest = (id: string) => {
     const prepared = operations.prepareDeleteItem(id);
     if (prepared.needsConfirm) {
@@ -168,8 +146,8 @@ export default function App() {
         message: `O elemento possui ${prepared.relatedCount} ligação(ões). Deseja excluir o elemento e todas as suas ligações?`,
         onConfirm: () => {
           prepared.execute();
-          setConfirmState({ open: false, message: '', onConfirm: undefined });
-        }
+          setConfirmState({ open: false, message: "", onConfirm: undefined });
+        },
       });
     } else {
       prepared.execute();
@@ -178,7 +156,6 @@ export default function App() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      {/* Toolbar com botão de sidebar */}
       <Toolbar
         tool={diagramState.tool}
         onToolChange={operations.handleToolChange}
@@ -199,19 +176,12 @@ export default function App() {
         selectedRelationshipType={diagramState.selectedRelationshipType}
         onRelationshipTypeChange={diagramState.setSelectedRelationshipType}
         onDiagramTypeChange={handleDiagramTypeChange}
-        onToggleSidebar={() => setShowSidebar((prev) => !prev)} // ✅ botão da toolbar
+        onToggleSidebar={() => setShowSidebar((prev) => !prev)}
         showSidebar={showSidebar}
       />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* 🧭 Canvas ajustável */}
-        <div
-          style={{
-            flex: "1 1 auto",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
+        <div style={{ flex: "1 1 auto", position: "relative", overflow: "hidden" }}>
           <Stage
             width={showSidebar ? stageSize.width - 280 : stageSize.width}
             height={stageSize.height}
@@ -230,28 +200,16 @@ export default function App() {
             </Layer>
 
             <Layer>
-              {shouldShowPreview && (
-                <ElementPreview
-                  tool={diagramState.tool}
-                  x={mousePosLocal.x}
-                  y={mousePosLocal.y}
-                  size={40}
-                  visible={true}
-                />
-              )}
-
-              {/* Relacionamentos */}
               {diagramState.diagram.relationships.map((rel) => {
-                const fromElement = diagramState.diagram.elements.find((e) => e.id === rel.from);
-                const toElement = diagramState.diagram.elements.find((e) => e.id === rel.to);
-                if (!fromElement || !toElement) return null;
-
+                const from = diagramState.diagram.elements.find((e) => e.id === rel.from);
+                const to = diagramState.diagram.elements.find((e) => e.id === rel.to);
+                if (!from || !to) return null;
                 return (
                   <UMLRelationshipComponent
                     key={rel.id}
                     relationship={rel}
-                    fromElement={fromElement}
-                    toElement={toElement}
+                    fromElement={from}
+                    toElement={to}
                     isSelected={diagramState.selectedElement === rel.id}
                     onClick={operations.handleElementClick}
                     diagramType={diagramType}
@@ -259,59 +217,49 @@ export default function App() {
                 );
               })}
 
-              {/* Elementos */}
-              {diagramState.diagram.elements.map((element) => {
-                if (diagramType === "usecase") {
-                  return (
-                    <UseCaseComponent
-                      key={element.id}
-                      element={element as UseCaseElement}
-                      onDragMove={handleDragMove}
-                      onDragEnd={operations.handleElementDragEnd}
-                      onClick={operations.handleElementClick}
-                      onTextEdit={operations.handleTextEdit}
-                      isSelected={diagramState.selectedElement === element.id}
-                    />
-                  );
-                } else if (diagramType === "activity") {
-                  return (
-                    <ActivityComponent
-                      key={element.id}
-                      element={element as ActivityElement}
-                      onDragMove={handleDragMove}
-                      onDragEnd={operations.handleElementDragEnd}
-                      onClick={operations.handleElementClick}
-                      onTextEdit={operations.handleTextEdit}
-                      isSelected={diagramState.selectedElement === element.id}
-                    />
-                  );
-                }
-                return null;
-              })}
+              {diagramState.diagram.elements.map((el) =>
+                diagramType === "usecase" ? (
+                  <UseCaseComponent
+                    key={el.id}
+                    element={el as UseCaseElement}
+                    onDragMove={handleDragMove}
+                    onDragEnd={operations.handleElementDragEnd}
+                    onClick={operations.handleElementClick}
+                    onTextEdit={operations.handleTextEdit}
+                    isSelected={diagramState.selectedElement === el.id}
+                  />
+                ) : (
+                  <ActivityComponent
+                    key={el.id}
+                    element={el as ActivityElement}
+                    onDragMove={handleDragMove}
+                    onDragEnd={operations.handleElementDragEnd}
+                    onClick={operations.handleElementClick}
+                    onTextEdit={operations.handleTextEdit}
+                    isSelected={diagramState.selectedElement === el.id}
+                  />
+                )
+              )}
             </Layer>
           </Stage>
         </div>
 
-        {/* 🧱 Sidebar visível apenas se showSidebar = true */}
         {showSidebar && (
           <Sidebar
             selectedId={diagramState.selectedElement}
             diagram={diagramState.diagram}
-            onUpdate={(newDiagram) => diagramState.updateDiagram(() => newDiagram)}
+            onUpdate={(d) => diagramState.updateDiagram(() => d)}
             onClearSelection={() => diagramState.setSelectedElement(null)}
           />
         )}
       </div>
 
-      {/* 🔒 Diálogo de confirmação */}
       <ConfirmDialog
         open={confirmState.open}
         title="Excluir elemento"
         message={confirmState.message}
-        onCancel={() => setConfirmState({ open: false, message: '', onConfirm: undefined })}
-        onConfirm={() => {
-          confirmState.onConfirm?.();
-        }}
+        onCancel={() => setConfirmState({ open: false, message: "", onConfirm: undefined })}
+        onConfirm={() => confirmState.onConfirm?.()}
       />
     </div>
   );

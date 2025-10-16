@@ -9,6 +9,7 @@ export class DiagramStorage {
   }
 
   // 📁 Salvar em arquivo .uml
+  // 📁 Salvar em arquivo .uml
   async saveToFile(diagram: UMLDiagram): Promise<boolean> {
     try {
       const diagramName = diagram.metadata?.name?.trim() || "diagram";
@@ -22,7 +23,7 @@ export class DiagramStorage {
 
       const diagramFile: DiagramFile = {
         metadata: diagram.metadata || this.createDefaultMetadata(),
-        elements: diagram.elements, // Mudou de 'classes' para 'elements'
+        elements: diagram.elements,
         relationships: diagram.relationships,
         viewport: { scale: 1, offset: { x: 0, y: 0 } }
       };
@@ -30,7 +31,7 @@ export class DiagramStorage {
       diagram.metadata.lastModified = new Date().toISOString();
       const data = JSON.stringify(diagramFile, null, 2);
       await vscode.workspace.fs.writeFile(uri, Buffer.from(data));
-      
+
       vscode.window.showInformationMessage('Diagrama salvo com sucesso!');
       return true;
     } catch (error) {
@@ -136,18 +137,12 @@ export class DiagramStorage {
 
   // Migração de diagramas antigos (com classes) para o novo formato
   private migrateDiagram(diagramFile: DiagramFile): UMLDiagram {
-    // Se for um diagrama antigo com classes, converte para o novo formato
-    if ((diagramFile as any).classes) {
-      return {
-        metadata: diagramFile.metadata || this.createDefaultMetadata(),
-        elements: (diagramFile as any).classes || [],
-        relationships: diagramFile.relationships || []
-      };
-    }
-    
-    // Se já estiver no formato novo, retorna como está
+    const metadata = diagramFile.metadata || this.createDefaultMetadata();
     return {
-      metadata: diagramFile.metadata || this.createDefaultMetadata(),
+      metadata: {
+        ...metadata,
+        comments: metadata.comments || (diagramFile as any).comments || ""
+      },
       elements: diagramFile.elements || [],
       relationships: diagramFile.relationships || []
     };

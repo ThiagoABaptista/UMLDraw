@@ -33,8 +33,12 @@ export class ExportService {
     }
   }
 
-  // Exportar para PDF
-  static async exportToPDF(element: HTMLElement, filename: string = 'diagram.pdf'): Promise<void> {
+  // Exportar para PDF (com suporte a comentários)
+  static async exportToPDF(
+    element: HTMLElement,
+    filename: string = 'diagram.pdf',
+    comments?: string
+  ): Promise<void> {
     try {
       const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
@@ -53,20 +57,31 @@ export class ExportService {
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = pageWidth - 20; // Margem de 10mm cada lado
+      const imgWidth = pageWidth - 20;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Se a imagem for muito alta, ajusta
       const finalHeight = imgHeight > pageHeight - 20 ? pageHeight - 20 : imgHeight;
 
+      // Página 1: diagrama
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, finalHeight);
+
+      // Página 2: comentários (se houver)
+      if (comments && comments.trim().length > 0) {
+        pdf.addPage();
+        pdf.setFontSize(18);
+        pdf.text('Comentários', 14, 20);
+
+        pdf.setFontSize(12);
+        const splitText = pdf.splitTextToSize(comments.trim(), pageWidth - 28);
+        pdf.text(splitText, 14, 35);
+      }
+
       pdf.save(filename);
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
       throw new Error('Falha ao exportar para PDF');
     }
   }
+
 
   // Exportar para PDF com metadados (simplificado)
   static async exportToPDFAdvanced(

@@ -14,7 +14,18 @@ export interface UseCaseElement {
 
 export interface ActivityElement {
   id: string;
-  type: 'start' | 'end' | 'activity' | 'decision' | 'merge' | 'fork' | 'join' | 'control_flow' | 'realization' | 'swimlane' | 'end_flow';
+  type:
+    | 'start'
+    | 'end'
+    | 'activity'
+    | 'decision'
+    | 'merge'
+    | 'fork'
+    | 'join'
+    | 'control_flow'
+    | 'realization'
+    | 'swimlane'
+    | 'end_flow';
   name: string;
   x: number;
   y: number;
@@ -26,17 +37,11 @@ export interface ActivityElement {
 
 export interface UMLRelationship {
   id: string;
-  from: string;       // ID do elemento de origem
-  to: string;         // ID do elemento de destino
+  from: string;
+  to: string;
   type: RelationshipType;
   label?: string;
-  guard?: string;    // Condição para fluxos de controle
-}
-
-export interface UMLDiagram {
-  metadata: DiagramMetadata;
-  elements: (UseCaseElement | ActivityElement)[];
-  relationships: UMLRelationship[];
+  guard?: string;
 }
 
 export interface DiagramMetadata {
@@ -45,13 +50,16 @@ export interface DiagramMetadata {
   created: string;
   lastModified: string;
   type: 'usecase' | 'activity';
-  comments?: string; // 🆕 Adicionado para permitir notas do diagrama
+  comments?: string;
 }
 
-export interface DiagramFile {
+export interface UMLDiagram {
   metadata: DiagramMetadata;
   elements: (UseCaseElement | ActivityElement)[];
   relationships: UMLRelationship[];
+}
+
+export interface DiagramFile extends UMLDiagram {
   viewport?: { scale: number; offset: { x: number; y: number } };
 }
 
@@ -67,8 +75,10 @@ export type Tool =
   | "fork"
   | "join"
   | "merge";
+
 export type CreationState = 'idle' | 'placing';
 export type ConnectionState = 'idle' | 'selecting-first' | 'selecting-second';
+
 export type RelationshipType =
   | 'association'
   | 'include'
