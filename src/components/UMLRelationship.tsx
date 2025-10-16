@@ -6,7 +6,6 @@ import {
   ActivityElement,
 } from "../types/umlTypes";
 import { getBorderPoint } from "../utils/geometry";
-import { umlSvgColors } from "../types/umlSvgColors";
 
 interface UMLRelationshipProps {
   relationship: UMLRelationship;
@@ -19,7 +18,6 @@ interface UMLRelationshipProps {
 
 /**
  * 🎯 Desenha as relações UML no canvas (Konva)
- * - Inclui setas, linhas tracejadas e rótulos
  */
 export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
   relationship,
@@ -29,23 +27,27 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
   onClick,
   diagramType,
 }) => {
-  // 🎨 Define estilo da seta conforme o tipo de relação
+  // 🖤 Cor base escura (fica azul apenas quando selecionado)
+  const baseColor = isSelected ? "#3b82f6" : "#1f2937";
+
+  // 🔄 Inverte direção da seta para tipos específicos
+  const isReversed =
+    relationship.type === "extend" ||
+    relationship.type === "dependency" ||
+    relationship.type === "object_flow";
+
+  // 🎨 Define estilo visual da seta conforme o tipo
   const getArrowConfig = () => {
-    const baseColor = umlSvgColors[relationship.type] || "#111827";
-    const stroke = isSelected ? "#3b82f6" : baseColor;
+    const stroke = baseColor;
     const fill = relationship.type === "generalization" ? "white" : stroke;
 
     switch (relationship.type) {
       case "association":
-        return { stroke, fill, dash: [], pointerClosed: true };
-      case "include":
-        return { stroke, fill, dash: [6, 4], pointerClosed: true };
-      case "extend":
-        return { stroke, fill, dash: [6, 4], pointerClosed: true };
-      case "dependency":
-        return { stroke, fill, dash: [6, 4], pointerClosed: true };
       case "control_flow":
         return { stroke, fill, dash: [], pointerClosed: true };
+      case "include":
+      case "extend":
+      case "dependency":
       case "object_flow":
         return { stroke, fill, dash: [6, 4], pointerClosed: true };
       case "generalization":
@@ -64,6 +66,7 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
     y: toElement.y + toElement.height / 2,
   };
 
+  // 📍 Calcula pontos de conexão entre shapes
   const from = getBorderPoint(
     fromElement.x,
     fromElement.y,
@@ -81,19 +84,33 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
     fromCenter.y
   );
 
-  const midX = (from.x + to.x) / 2;
-  const midY = (from.y + to.y) / 2;
+  // 🔄 Inverte os pontos quando necessário
+  const start = isReversed ? to : from;
+  const end = isReversed ? from : to;
+
+  const midX = (start.x + end.x) / 2;
+  const midY = (start.y + end.y) / 2;
 
   const arrowConfig = getArrowConfig();
 
+  // 🔤 Label automático para <<include>> e <<extend>>
+  const displayLabel =
+    relationship.label ||
+    (relationship.type === "include"
+      ? "<<include>>"
+      : relationship.type === "extend"
+      ? "<<extend>>"
+      : "");
+
   return (
     <Group
+      key={`${relationship.id}-${relationship.type}-${isSelected}`}
       onClick={() => onClick(relationship.id)}
       onTap={() => onClick(relationship.id)}
       listening
     >
       <Arrow
-        points={[from.x, from.y, to.x, to.y]}
+        points={[start.x, start.y, end.x, end.y]}
         pointerLength={12}
         pointerWidth={12}
         fill={arrowConfig.fill}
@@ -104,15 +121,15 @@ export const UMLRelationshipComponent: React.FC<UMLRelationshipProps> = ({
         pointerClosed={arrowConfig.pointerClosed}
         shadowColor={isSelected ? "#3b82f6" : "transparent"}
         shadowBlur={isSelected ? 8 : 0}
-        shadowOpacity={isSelected ? 0.2 : 0}
+        shadowOpacity={isSelected ? 0.3 : 0}
       />
 
-      {/* 💬 Label principal (ex: <<include>>, <<extend>>) */}
-      {relationship.label && (
+      {/* 💬 Label principal (<<include>>, <<extend>> ou custom) */}
+      {displayLabel && (
         <Text
-          x={midX - 25}
+          x={midX - displayLabel.length * 2.5}
           y={midY - 10}
-          text={relationship.label}
+          text={displayLabel}
           fontSize={12}
           fill="#374151"
           fontStyle="italic"
