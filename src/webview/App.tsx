@@ -4,33 +4,28 @@ import { Toolbar } from "../components/Toolbar";
 import { UMLRelationshipComponent } from "../components/UMLRelationship";
 import { UseCaseComponent } from "../components/UseCaseComponent";
 import { ActivityComponent } from "../components/ActivityComponent";
-import { ElementPreview } from "../components/ElementPreview";
-import { DebugLayer } from "../hooks/useDebugLayer";
+import { GridBackground } from "../components/GridBackground";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { Sidebar } from "../components/Sidebar";
 import { useDiagramState } from "../hooks/useDiagramState";
 import { useDiagramOperations } from "../hooks/useDiagramOperations";
 import { useVSCodeCommunication } from "../hooks/useVSCodeCommunication";
 import { useStageInteractions } from "../hooks/useStageInteractions";
 import { useCanvasResize } from "../hooks/useCanvasResize";
-import { useMousePosition } from "../hooks/useMousePosition";
 import { useStageZoom } from "../hooks/useStageZoom";
 import { useStageDragFeedback } from "../hooks/useStageDragFeedback";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { ExportService } from "../services/exportService";
-import { UMLDiagram, UseCaseElement, ActivityElement, UMLRelationship } from "../types/umlTypes";
-import { GridBackground } from "../components/GridBackground";
-import { ConfirmDialog } from "../components/ConfirmDialog";
-import { Sidebar } from "../components/Sidebar";
+import { UMLDiagram, UseCaseElement, ActivityElement } from "../types/umlTypes";
 
 export default function App() {
   const [diagramType, setDiagramType] = useState<"usecase" | "activity">("usecase");
   const [showSidebar, setShowSidebar] = useState(true);
 
   const diagramState = useDiagramState();
-  const { mousePosition } = useMousePosition();
-  const { handleStageWheel, handleStagePan, handleDoubleClick } = useStageZoom();
   const stageSize = useCanvasResize(50);
+  const { handleStageWheel, handleStagePan } = useStageZoom();
   const { handleDragMove } = useStageDragFeedback({ updateDiagram: diagramState.updateDiagram });
-  const [mousePosLocal, setMousePosLocal] = useState({ x: 0, y: 0 });
 
   const operations = useDiagramOperations(
     {
@@ -55,17 +50,7 @@ export default function App() {
     diagramType
   );
 
-  // Comunicação com VSCode
-  const vsCodeComm = useVSCodeCommunication(
-    diagramState.diagram,
-    diagramType,
-    (diagram) => {
-      diagramState.setDiagram(diagram);
-      setDiagramType(diagram.metadata.type);
-    },
-    () => `${diagramState.diagram.metadata.name || "Diagrama"}.uml`
-  );
-
+  // Agora usamos useStageInteractions — aqui está a lógica de criação por clique no stage
   const stageInteractions = useStageInteractions({
     creationState: diagramState.creationState,
     tool: diagramState.tool,
@@ -78,16 +63,28 @@ export default function App() {
     setConnectionState: diagramState.setConnectionState,
     setConnectionStart: diagramState.setConnectionStart,
     clearEditingState: diagramState.clearEditingState,
-    onMousePositionChange: setMousePosLocal,
+    onMousePositionChange: undefined
   });
 
+  // Comunicação com VSCode (mantém nome do arquivo)
+  const vsCodeComm = useVSCodeCommunication(
+    diagramState.diagram,
+    diagramType,
+    (diagram) => {
+      diagramState.setDiagram(diagram);
+      setDiagramType(diagram.metadata.type);
+    },
+    () => `${diagramState.diagram.metadata.name || "Diagrama"}.uml`
+  );
+
+  // confirmações
   const [confirmState, setConfirmState] = useState({
     open: false,
     message: "",
     onConfirm: undefined as (() => void) | undefined,
   });
 
-  // Atalhos
+  // atalhos
   useKeyboardShortcuts({
     onDelete: () => {
       if (!diagramState.selectedElement) return;
@@ -95,32 +92,27 @@ export default function App() {
     },
   });
 
+  // export handlers
   const handleExportPNG = async () => {
-    try {
-      const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
-      if (!stageContainer) throw new Error("Container do diagrama não encontrado");
-      await ExportService.exportToPNG(stageContainer, `${diagramState.diagram.metadata.name || "diagrama"}.png`);
-      vsCodeComm.showMessage("info", "Diagrama exportado como PNG com sucesso!");
-    } catch (error) {
-      vsCodeComm.showMessage("error", `Erro ao exportar PNG: ${(error as Error).message}`);
-    }
+    const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
+    if (!stageContainer) return;
+    await ExportService.exportToPNG(stageContainer, `${diagramState.diagram.metadata.name || "diagrama"}.png`);
+    vsCodeComm.showMessage("info", "Exportado como PNG com sucesso!");
   };
 
   const handleExportPDF = async () => {
-    try {
-      const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
-      if (!stageContainer) throw new Error("Container do diagrama não encontrado");
-      await ExportService.exportToPDF(
-        stageContainer,
-        `${diagramState.diagram.metadata.name || "diagrama"}.pdf`,
-        diagramState.diagram.metadata.comments || ""
-      );
-      vsCodeComm.showMessage("info", "Diagrama exportado como PDF com sucesso!");
-    } catch (error) {
-      vsCodeComm.showMessage("error", `Erro ao exportar PDF: ${(error as Error).message}`);
-    }
+    const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
+    if (!stageContainer) return;
+    // envia comentários que estão em metadata.comments
+    await ExportService.exportToPDF(
+      stageContainer,
+      `${diagramState.diagram.metadata.name || "diagrama"}.pdf`,
+      diagramState.diagram.metadata.comments || ""
+    );
+    vsCodeComm.showMessage("info", "Exportado como PDF com sucesso!");
   };
 
+  // troca de tipo de diagrama — reset completo e ajuste do tipo de relacionamento padrão
   const handleDiagramTypeChange = (type: "usecase" | "activity") => {
     setDiagramType(type);
     diagramState.setTool("select");
@@ -132,10 +124,15 @@ export default function App() {
         created: new Date().toISOString(),
         lastModified: new Date().toISOString(),
         type,
+        comments: "",
       },
       elements: [],
       relationships: [],
     });
+    diagramState.setSelectedElement(null);
+    diagramState.setCreationState("idle");
+    diagramState.setConnectionState("idle");
+    diagramState.setConnectionStart(null);
   };
 
   const handleDeleteRequest = (id: string) => {
@@ -176,12 +173,12 @@ export default function App() {
         selectedRelationshipType={diagramState.selectedRelationshipType}
         onRelationshipTypeChange={diagramState.setSelectedRelationshipType}
         onDiagramTypeChange={handleDiagramTypeChange}
-        onToggleSidebar={() => setShowSidebar((prev) => !prev)}
+        onToggleSidebar={() => setShowSidebar((p) => !p)}
         showSidebar={showSidebar}
       />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <div style={{ flex: "1 1 auto", position: "relative", overflow: "hidden" }}>
+        <div style={{ flex: "1 1 auto", position: "relative" }}>
           <Stage
             width={showSidebar ? stageSize.width - 280 : stageSize.width}
             height={stageSize.height}
@@ -192,7 +189,6 @@ export default function App() {
             }}
             onClick={stageInteractions.handleStageClick}
             onTap={stageInteractions.handleStageClick}
-            onDblClick={handleDoubleClick}
             onMouseMove={stageInteractions.handleMouseMove}
           >
             <Layer listening={false}>
@@ -249,6 +245,7 @@ export default function App() {
             selectedId={diagramState.selectedElement}
             diagram={diagramState.diagram}
             onUpdate={(d) => diagramState.updateDiagram(() => d)}
+            onSelect={diagramState.setSelectedElement}
             onClearSelection={() => diagramState.setSelectedElement(null)}
           />
         )}
