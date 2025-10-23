@@ -31,13 +31,21 @@ textarea:focus {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  flex-direction: column;
   justify-content: space-around;
+}
+.toolbar-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-evenly;
 }
 
 .toolbar-section {
     display: inline-flex;
     align-items: center;
     gap: 0.2rem;
+    justify-content: center;
 }
 
 .toolbar-button {
@@ -151,6 +159,32 @@ textarea:focus {
 .diagram-tab-new:hover {
   transform: rotate(90deg);
 }
+
+.editable-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f3f4f6;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.editable-title-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #333;
+  margin: 0;
+}
+
+.editable-title-input {
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  width: 200px;
+}
+
 
 /* === Layout principal === */
 .app-container {

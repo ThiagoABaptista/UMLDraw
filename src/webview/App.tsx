@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Stage, Layer } from "react-konva";
 import { Toolbar } from "../components/Toolbar";
 import { UMLRelationshipComponent } from "../components/UMLRelationship";
@@ -17,21 +17,27 @@ import { useStageDragFeedback } from "../hooks/useStageDragFeedback";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { ExportService } from "../services/exportService";
 import { UMLDiagram, UMLProject, UseCaseElement, ActivityElement } from "../types/umlTypes";
-import { X, Plus } from "lucide-react";
+import { EditableTitle } from "../components/EditableTitle";
+import { DiagramTabs } from "../components/DiagramTabs";
 
 export default function App() {
+  const diagramState = useDiagramState();
+
   const [project, setProject] = useState<UMLProject>({
     version: "1.0",
     name: "Novo Projeto UML",
     created: new Date().toISOString(),
     lastModified: new Date().toISOString(),
-    diagrams: [],
+    diagrams: [diagramState.diagram],
   });
+
   const [activeDiagramIndex, setActiveDiagramIndex] = useState(0);
   const [showSidebar, setShowSidebar] = useState(true);
   const [confirmDeleteDiagram, setConfirmDeleteDiagram] = useState<{ open: boolean; index?: number }>({ open: false });
+  const [confirmResetDiagram, setConfirmResetDiagram] = useState<{ open: boolean; type?: "usecase" | "activity" }>({
+    open: false,
+  });
 
-  const diagramState = useDiagramState();
   const stageSize = useCanvasResize(50);
   const { handleStageWheel, handleStagePan } = useStageZoom();
   const { handleDragMove } = useStageDragFeedback({ updateDiagram: diagramState.updateDiagram });
@@ -103,21 +109,6 @@ export default function App() {
     diagramState.setDiagram(targetDiagram);
   };
 
-  // === ⌨️ Atalhos de teclado Ctrl+Tab / Ctrl+Shift+Tab ===
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "Tab") {
-        e.preventDefault();
-        const nextIndex = e.shiftKey
-          ? (activeDiagramIndex - 1 + project.diagrams.length) % project.diagrams.length
-          : (activeDiagramIndex + 1) % project.diagrams.length;
-        handleSwitchDiagram(nextIndex);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [activeDiagramIndex, project.diagrams.length]);
-
   // === 🧩 Atualiza projeto quando o diagrama atual muda ===
   useEffect(() => {
     setProject((prev) => {
@@ -127,6 +118,29 @@ export default function App() {
       return { ...prev, diagrams: updated, lastModified: new Date().toISOString() };
     });
   }, [diagramState.diagram, activeDiagramIndex]);
+
+  // === 🔄 Resetar estado do diagrama ===
+  const resetDiagramState = (type: "usecase" | "activity") => {
+    const newDiagram: UMLDiagram = {
+      metadata: {
+        version: "1.0",
+        name: `Novo Diagrama de ${type === "usecase" ? "Casos de Uso" : "Atividades"}`,
+        created: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        type,
+        comments: "",
+      },
+      elements: [],
+      relationships: [],
+    };
+
+    diagramState.setDiagram(newDiagram);
+    setProject((prev) => {
+      const updated = [...prev.diagrams];
+      updated[activeDiagramIndex] = newDiagram;
+      return { ...prev, diagrams: updated, lastModified: new Date().toISOString() };
+    });
+  };
 
   // === ➕ Novo diagrama ===
   const handleNewDiagram = () => {
@@ -156,7 +170,6 @@ export default function App() {
     setConfirmDeleteDiagram({ open: true, index });
   };
 
-
   const confirmDelete = () => {
     const index = confirmDeleteDiagram.index!;
     const updated = project.diagrams.filter((_, i) => i !== index);
@@ -167,7 +180,7 @@ export default function App() {
     setConfirmDeleteDiagram({ open: false });
   };
 
-  // === Exports / Delete ===
+  // === 📄 Exportações ===
   const handleExportPNG = async () => {
     const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
     if (stageContainer) {
@@ -188,6 +201,7 @@ export default function App() {
     }
   };
 
+  // === 🗑️ Exclusão de elementos ===
   const [confirmState, setConfirmState] = useState({
     open: false,
     message: "",
@@ -210,6 +224,7 @@ export default function App() {
     }
   };
 
+  // === ⌨️ Atalhos ===
   useKeyboardShortcuts({
     onDelete: () => {
       if (diagramState.selectedElement) handleDeleteRequest(diagramState.selectedElement);
@@ -218,6 +233,20 @@ export default function App() {
     onSave: () => vsCodeComm.handleSaveProject(project),
     onNewDiagram: handleNewDiagram,
   });
+
+  // === 🧩 Alterar tipo de diagrama ===
+  const handleChangeDiagramType = (newType: "usecase" | "activity") => {
+    if (newType === diagramState.diagram.metadata.type) return;
+
+    const hasElements =
+      diagramState.diagram.elements.length > 0 || diagramState.diagram.relationships.length > 0;
+
+    if (hasElements) {
+      setConfirmResetDiagram({ open: true, type: newType });
+    } else {
+      resetDiagramState(newType);
+    }
+  };
 
   return (
     <div className="app-container">
@@ -241,42 +270,26 @@ export default function App() {
         diagramType={diagramState.diagram.metadata.type}
         selectedRelationshipType={diagramState.selectedRelationshipType}
         onRelationshipTypeChange={diagramState.setSelectedRelationshipType}
-        onDiagramTypeChange={(t) =>
-          diagramState.updateDiagram((d) => ({ ...d, metadata: { ...d.metadata, type: t } }))
-        }
+        onDiagramTypeChange={handleChangeDiagramType}
         onToggleSidebar={() => setShowSidebar((p) => !p)}
         showSidebar={showSidebar}
       />
 
-      {/* Abas de diagramas */}
-      <div className="diagram-tabs-container">
-        <div className="diagram-tabs-bar">
-          {project.diagrams.map((d, i) => (
-            <div
-              key={d.metadata.name}
-              className={`diagram-tab ${i === activeDiagramIndex ? "active" : ""}`}
-              onClick={() => handleSwitchDiagram(i)}
-            >
-              {d.metadata.name}
-              <X
-                size={14}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteDiagram(i);
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        <button
-          className="diagram-tab-new"
-          onClick={handleNewDiagram}
-          title="Novo Diagrama"
-        >
-          <Plus size={16} />
-        </button>
-      </div>
+      <EditableTitle
+        value={project.name}
+        onChange={(newName) =>
+          setProject((prev) => ({ ...prev, name: newName, lastModified: new Date().toISOString() }))
+        }
+      />
 
+      {/* Abas de diagramas */}
+      <DiagramTabs
+        diagrams={project.diagrams}
+        activeIndex={activeDiagramIndex}
+        onSwitch={handleSwitchDiagram}
+        onNew={handleNewDiagram}
+        onDelete={handleDeleteDiagram}
+      />
 
       {/* Canvas + Sidebar */}
       <div className="app-main">
@@ -353,7 +366,7 @@ export default function App() {
         )}
       </div>
 
-      {/* Diálogo de confirmação */}
+      {/* Diálogos de confirmação */}
       <ConfirmDialog
         open={confirmState.open}
         title="Excluir elemento"
@@ -368,6 +381,17 @@ export default function App() {
         message={`Tem certeza que deseja excluir o diagrama "${project.diagrams[confirmDeleteDiagram.index!]?.metadata.name}"?`}
         onCancel={() => setConfirmDeleteDiagram({ open: false })}
         onConfirm={confirmDelete}
+      />
+
+      <ConfirmDialog
+        open={confirmResetDiagram.open}
+        title="Alterar tipo de diagrama"
+        message="Alterar o tipo de diagrama apagará todos os elementos atuais. Deseja continuar?"
+        onCancel={() => setConfirmResetDiagram({ open: false })}
+        onConfirm={() => {
+          if (confirmResetDiagram.type) resetDiagramState(confirmResetDiagram.type);
+          setConfirmResetDiagram({ open: false });
+        }}
       />
     </div>
   );
