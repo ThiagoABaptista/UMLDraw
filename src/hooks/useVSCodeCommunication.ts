@@ -1,18 +1,14 @@
 import { useCallback, useEffect } from "react";
-import { UMLDiagram } from "../types/umlTypes";
+import { UMLDiagram, UMLProject } from "../types/umlTypes";
 
 declare global {
   interface Window {
-    vscode?: {
-      postMessage: (message: any) => void;
-    };
+    vscode?: { postMessage: (message: any) => void };
   }
 }
 
 const vscodePostMessage = (message: any) => {
-  if (window.vscode) {
-    window.vscode.postMessage(message);
-  }
+  if (window.vscode) window.vscode.postMessage(message);
 };
 
 const showMessage = (type: "info" | "error", text: string) => {
@@ -23,16 +19,17 @@ const showMessage = (type: "info" | "error", text: string) => {
 };
 
 /**
- * Hook para comunicação com o VSCode Webview.
+ * Hook de comunicação entre o VSCode e o Webview.
+ * Suporta diagramas únicos (.uml) e projetos múltiplos (.umlproj)
  */
 export const useVSCodeCommunication = (
   diagram: UMLDiagram,
   diagramType: "usecase" | "activity",
-  onDiagramLoaded: (diagram: UMLDiagram) => void,
+  onDataLoaded: (data: UMLDiagram | UMLProject) => void,
   getFileName?: () => string
 ) => {
-  const buildDiagramPayload = useCallback(() => {
-    return {
+  const buildDiagramPayload = useCallback(
+    () => ({
       ...diagram,
       metadata: {
         version: diagram.metadata?.version || "1.0",
@@ -42,63 +39,60 @@ export const useVSCodeCommunication = (
         type: diagramType,
         comments: diagram.metadata?.comments || "",
       },
-    };
-  }, [diagram, diagramType]);
+    }),
+    [diagram, diagramType]
+  );
 
+  /** 🔹 Salvar diagrama simples (.uml) */
   const handleSaveToFile = useCallback(() => {
     const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
-
-    vscodePostMessage({
-      command: "saveToFile",
-      diagram: buildDiagramPayload(),
-      fileName,
-    });
+    vscodePostMessage({ command: "saveToFile", diagram: buildDiagramPayload(), fileName });
   }, [diagram, getFileName, buildDiagramPayload]);
 
-  const handleSaveToWorkspace = useCallback(() => {
-    vscodePostMessage({
-      command: "saveToWorkspace",
-      diagram: buildDiagramPayload(),
-    });
-  }, [diagram, buildDiagramPayload]);
-
-  const handleSave = useCallback(() => {
-    const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
-
-    vscodePostMessage({
-      command: "saveToFile",
-      diagram: buildDiagramPayload(),
-      fileName,
-    });
-  }, [diagram, getFileName, buildDiagramPayload]);
-
+  /** 🔹 Salvar como novo (.uml) */
   const handleSaveAs = useCallback(() => {
     const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
-
-    vscodePostMessage({
-      command: "saveAsFile", // comando separado
-      diagram: buildDiagramPayload(),
-      fileName,
-    });
+    vscodePostMessage({ command: "saveAsFile", diagram: buildDiagramPayload(), fileName });
   }, [diagram, getFileName, buildDiagramPayload]);
 
+  /** 🔹 Salvar projeto (.umlproj) */
+  const handleSaveProject = useCallback((project: UMLProject) => {
+    vscodePostMessage({
+      command: "saveProject",
+      project,
+      fileName: `${project.name || "Projeto"}.umlproj`,
+    });
+  }, []);
+
+  /** 🔹 Salvar projeto como (.umlproj) */
+  const handleSaveAsProject = useCallback((project: UMLProject) => {
+    vscodePostMessage({
+      command: "saveAsProject",
+      project,
+      fileName: `${project.name || "Projeto"}.umlproj`,
+    });
+  }, []);
+
+  /** 🔹 Carregar arquivo */
   const handleLoad = useCallback(() => {
     vscodePostMessage({ command: "requestLoad" });
   }, []);
 
+  /** 🔹 Carregar projeto completo */
+  const handleLoadProject = useCallback(() => {
+    vscodePostMessage({ command: "requestLoadProject" });
+  }, []);
+
+  /** 🔹 Listener para mensagens */
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
-
       switch (message.command) {
-        case "saveDiagram":
-          handleSaveToFile();
-          break;
-
         case "loadDiagram":
         case "loadInitialDiagram":
-          if (message.diagram) {
-            onDiagramLoaded(message.diagram);
+        case "loadProject":
+          if (message.diagram || message.project) {
+            onDataLoaded(message.diagram || message.project);
           }
           break;
       }
@@ -108,14 +102,15 @@ export const useVSCodeCommunication = (
     vscodePostMessage({ command: "requestInitialDiagram" });
 
     return () => window.removeEventListener("message", handleMessage);
-  }, [handleSaveToFile, onDiagramLoaded]);
+  }, [onDataLoaded]);
 
   return {
     handleSaveToFile,
-    handleSaveToWorkspace,
-    handleSave,
     handleSaveAs,
+    handleSaveProject,
+    handleSaveAsProject,
     handleLoad,
+    handleLoadProject,
     showMessage,
   };
 };

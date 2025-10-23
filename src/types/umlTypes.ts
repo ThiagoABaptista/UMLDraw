@@ -59,6 +59,14 @@ export interface UMLDiagram {
   relationships: UMLRelationship[];
 }
 
+export interface UMLProject {
+  version: string;
+  name: string;
+  created: string;
+  lastModified: string;
+  diagrams: UMLDiagram[];
+}
+
 export interface DiagramFile extends UMLDiagram {
   viewport?: { scale: number; offset: { x: number; y: number } };
 }

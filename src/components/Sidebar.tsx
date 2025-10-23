@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"geral" | "elementos" | "relacoes">("geral");
 
-  // se o usuário selecionar algo fora do sidebar (canvas), trocamos a aba automaticamente
+  // 🧭 Alterna automaticamente entre abas com base no item selecionado
   useEffect(() => {
     if (!selectedId) {
       setActiveTab("geral");
@@ -33,26 +33,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const isRel = diagram.relationships.some((r) => r.id === selectedId);
     if (isElement) setActiveTab("elementos");
     else if (isRel) setActiveTab("relacoes");
-  }, [selectedId, diagram.elements, diagram.relationships]);
+  }, [selectedId, diagram]);
 
-  const selectedElement = diagram.elements.find((el) => el.id === selectedId) ?? null;
+  const selectedElement = diagram.elements.find((e) => e.id === selectedId) ?? null;
   const selectedRel = diagram.relationships.find((r) => r.id === selectedId) ?? null;
 
+  // === Atualizações ===
   const updateMetadata = (patch: Partial<typeof diagram.metadata>) => {
     onUpdate({
       ...diagram,
-      metadata: {
-        ...diagram.metadata,
-        ...patch,
-        lastModified: new Date().toISOString(),
-      },
+      metadata: { ...diagram.metadata, ...patch, lastModified: new Date().toISOString() },
     });
   };
 
-  const handleElementChange = (
-    key: keyof (UseCaseElement | ActivityElement),
-    value: any
-  ) => {
+  const handleElementChange = (key: keyof (UseCaseElement | ActivityElement), value: any) => {
     if (!selectedElement) return;
     const updatedElements = diagram.elements.map((el) =>
       el.id === selectedElement.id ? { ...el, [key]: value } : el
@@ -95,13 +89,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       style={{
-        width: "280px",
+        width: "300px",
         background: "#fafafa",
         borderLeft: "1px solid #ddd",
         display: "flex",
         flexDirection: "column",
       }}
     >
+      {/* Cabeçalho */}
+      <div
+        style={{
+          padding: "0.75rem 1rem",
+          fontWeight: 700,
+          fontSize: "1.1rem",
+          borderBottom: "1px solid #ddd",
+          background: "#f9fafb",
+        }}
+      >
+        {diagram.metadata.name || "Diagrama sem nome"}
+      </div>
+
       {/* Abas */}
       <div style={{ display: "flex", borderBottom: "1px solid #ddd", background: "#f3f4f6" }}>
         {[
@@ -117,7 +124,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               padding: "0.5rem",
               background: activeTab === tab.id ? "#fff" : "#f3f4f6",
               border: "none",
-              borderBottom: activeTab === tab.id ? "2px solid #3b82f6" : "2px solid transparent",
+              borderBottom:
+                activeTab === tab.id ? "2px solid #3b82f6" : "2px solid transparent",
               fontWeight: 600,
               cursor: "pointer",
             }}
@@ -127,37 +135,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </div>
 
+      {/* Conteúdo */}
       <div style={{ flex: 1, padding: "1rem", overflowY: "auto" }}>
-        {/* ABA GERAL */}
+        {/* === Aba Geral === */}
         {activeTab === "geral" && (
           <>
-            <h2 style={{ fontSize: "1.1rem", fontWeight: "bold", marginBottom: 8 }}>
-              Propriedades do Diagrama
-            </h2>
-
-            <label style={{ fontWeight: 600, marginTop: 8 }}>Nome</label>
+            <label style={{ fontWeight: 600 }}>Nome do Diagrama</label>
             <input
               type="text"
               value={diagram.metadata.name ?? ""}
               onChange={(e) => updateMetadata({ name: e.target.value })}
-              style={{ width: "100%", marginBottom: "1rem", padding: "0.4rem", borderRadius: "6px", border: "1px solid #ccc" }}
+              style={{
+                width: "100%",
+                marginBottom: "1rem",
+                padding: "0.4rem",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+              }}
             />
 
             <label style={{ fontWeight: 600 }}>Comentários</label>
             <textarea
               value={diagram.metadata.comments ?? ""}
               onChange={(e) => updateMetadata({ comments: e.target.value })}
-              placeholder="Adicione anotações ou observações..."
-              style={{ width: "100%", height: "120px", borderRadius: "6px", padding: "0.4rem", border: "1px solid #ccc", resize: "vertical" }}
+              placeholder="Adicione observações..."
+              style={{
+                width: "100%",
+                height: "100px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                padding: "0.4rem",
+                resize: "vertical",
+              }}
             />
           </>
         )}
 
-        {/* ABA ELEMENTOS */}
+        {/* === Aba Elementos === */}
         {activeTab === "elementos" && (
           <>
-            <h2 style={{ fontSize: "1.1rem", fontWeight: "bold", marginBottom: 8 }}>Elementos</h2>
-            {diagram.elements.length === 0 && <p>Nenhum elemento adicionado.</p>}
+            <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Elementos</h3>
+            {diagram.elements.length === 0 && <p>Nenhum elemento criado.</p>}
             <ul style={{ listStyle: "none", padding: 0 }}>
               {diagram.elements.map((el) => (
                 <li key={el.id}>
@@ -168,7 +186,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       textAlign: "left",
                       padding: "0.4rem",
                       borderRadius: "6px",
-                      border: selectedId === el.id ? "2px solid #3b82f6" : "1px solid #ccc",
+                      border:
+                        selectedId === el.id
+                          ? "2px solid #3b82f6"
+                          : "1px solid transparent",
                       background: selectedId === el.id ? "#e0e7ff" : "transparent",
                       marginBottom: "0.3rem",
                       cursor: "pointer",
@@ -180,27 +201,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ))}
             </ul>
 
-            {/* Se um elemento está selecionado, mostramos detalhes abaixo da lista */}
             {selectedElement && (
               <>
-                <hr />
-                <h3 style={{ marginTop: 8 }}>Detalhes do Elemento</h3>
-                <p style={{ marginBottom: 6 }}>Tipo: <strong>{getElementTypeLabel(selectedElement.type)}</strong></p>
+                <hr style={{ margin: "0.75rem 0" }} />
+                <h4 style={{ marginBottom: "0.5rem" }}>
+                  {getElementTypeLabel(selectedElement.type)}
+                </h4>
                 <label style={{ fontWeight: 600 }}>Nome</label>
-                <input type="text" value={selectedElement.name ?? ""} onChange={(e) => handleElementChange("name", e.target.value)}
-                  style={{ width: "100%", marginBottom: "0.5rem", padding: "0.4rem", borderRadius: "6px", border: "1px solid #ccc" }} />
+                <input
+                  type="text"
+                  value={selectedElement.name ?? ""}
+                  onChange={(e) => handleElementChange("name", e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.4rem",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    marginBottom: "0.5rem",
+                  }}
+                />
+
                 <label style={{ fontWeight: 600 }}>Cor</label>
-                <input type="color" value={(selectedElement as any).color ?? "#000000"} onChange={(e) => handleElementChange("color", e.target.value)}
-                  style={{ width: "100%", height: "2rem", border: "none", marginTop: 8 }} />
+                <input
+                  type="color"
+                  value={(selectedElement as any).color ?? "#000000"}
+                  onChange={(e) => handleElementChange("color", e.target.value)}
+                  style={{ width: "100%", height: "2rem", border: "none" }}
+                />
               </>
             )}
           </>
         )}
 
-        {/* ABA RELAÇÕES */}
+        {/* === Aba Relações === */}
         {activeTab === "relacoes" && (
           <>
-            <h2 style={{ fontSize: "1.1rem", fontWeight: "bold", marginBottom: 8 }}>Relações</h2>
+            <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Relações</h3>
             {diagram.relationships.length === 0 && <p>Nenhuma relação criada.</p>}
             <ul style={{ listStyle: "none", padding: 0 }}>
               {diagram.relationships.map((rel) => (
@@ -212,28 +248,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       textAlign: "left",
                       padding: "0.4rem",
                       borderRadius: "6px",
-                      border: selectedId === rel.id ? "2px solid #3b82f6" : "1px solid #ccc",
+                      border:
+                        selectedId === rel.id
+                          ? "2px solid #3b82f6"
+                          : "1px solid transparent",
                       background: selectedId === rel.id ? "#e0e7ff" : "transparent",
                       marginBottom: "0.3rem",
                       cursor: "pointer",
                     }}
                   >
-                    {getElementTypeLabel(rel.type)} {rel.label ? `(${rel.label})` : ""}
+                    {getElementTypeLabel(rel.type)}{" "}
+                    {rel.label ? `(${rel.label})` : ""}
                   </button>
                 </li>
               ))}
             </ul>
 
-            {/* Se uma relação estiver selecionada, mostramos detalhes */}
             {selectedRel && (
               <>
-                <hr />
-                <h3 style={{ marginTop: 8 }}>Detalhes da Relação</h3>
-                <p>Tipo atual: <strong>{getElementTypeLabel(selectedRel.type)}</strong></p>
+                <hr style={{ margin: "0.75rem 0" }} />
+                <h4 style={{ marginBottom: "0.5rem" }}>
+                  {getElementTypeLabel(selectedRel.type)}
+                </h4>
 
-                <label style={{ fontWeight: 600 }}>Tipo de relação</label>
-                <select value={selectedRel.type} onChange={(e) => handleRelationshipChange("type", e.target.value as any)}
-                  style={{ width: "100%", marginBottom: "0.5rem", padding: "0.4rem", borderRadius: "6px", border: "1px solid #ccc" }}>
+                <label style={{ fontWeight: 600 }}>Tipo</label>
+                <select
+                  value={selectedRel.type}
+                  onChange={(e) => handleRelationshipChange("type", e.target.value as any)}
+                  style={{
+                    width: "100%",
+                    padding: "0.4rem",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    marginBottom: "0.5rem",
+                  }}
+                >
                   {diagram.metadata.type === "usecase" ? (
                     <>
                       <option value="association">Associação</option>
@@ -251,15 +300,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </select>
 
                 <label style={{ fontWeight: 600 }}>Rótulo</label>
-                <input type="text" value={selectedRel.label ?? ""} onChange={(e) => handleRelationshipChange("label", e.target.value)}
-                  style={{ width: "100%", marginBottom: "0.5rem", padding: "0.4rem", borderRadius: "6px", border: "1px solid #ccc" }} />
+                <input
+                  type="text"
+                  value={selectedRel.label ?? ""}
+                  onChange={(e) => handleRelationshipChange("label", e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.4rem",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    marginBottom: "0.5rem",
+                  }}
+                />
 
-                {(selectedRel.type === "control_flow" || selectedRel.type === "object_flow") && (
+                {(selectedRel.type === "control_flow" ||
+                  selectedRel.type === "object_flow") && (
                   <>
                     <label style={{ fontWeight: 600 }}>Condição (guard)</label>
-                    <input type="text" value={selectedRel.guard ?? ""} onChange={(e) => handleRelationshipChange("guard", e.target.value)}
+                    <input
+                      type="text"
+                      value={selectedRel.guard ?? ""}
+                      onChange={(e) => handleRelationshipChange("guard", e.target.value)}
                       placeholder="[condição]"
-                      style={{ width: "100%", marginBottom: "0.5rem", padding: "0.4rem", borderRadius: "6px", border: "1px solid #ccc" }} />
+                      style={{
+                        width: "100%",
+                        padding: "0.4rem",
+                        borderRadius: "6px",
+                        border: "1px solid #ccc",
+                      }}
+                    />
                   </>
                 )}
               </>

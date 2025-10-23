@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Stage, Layer } from "react-konva";
 import { Toolbar } from "../components/Toolbar";
 import { UMLRelationshipComponent } from "../components/UMLRelationship";
@@ -16,17 +16,27 @@ import { useStageZoom } from "../hooks/useStageZoom";
 import { useStageDragFeedback } from "../hooks/useStageDragFeedback";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { ExportService } from "../services/exportService";
-import { UMLDiagram, UseCaseElement, ActivityElement } from "../types/umlTypes";
+import { UMLDiagram, UMLProject, UseCaseElement, ActivityElement } from "../types/umlTypes";
+import { X, Plus } from "lucide-react";
 
 export default function App() {
-  const [diagramType, setDiagramType] = useState<"usecase" | "activity">("usecase");
+  const [project, setProject] = useState<UMLProject>({
+    version: "1.0",
+    name: "Novo Projeto UML",
+    created: new Date().toISOString(),
+    lastModified: new Date().toISOString(),
+    diagrams: [],
+  });
+  const [activeDiagramIndex, setActiveDiagramIndex] = useState(0);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [confirmDeleteDiagram, setConfirmDeleteDiagram] = useState<{ open: boolean; index?: number }>({ open: false });
 
   const diagramState = useDiagramState();
   const stageSize = useCanvasResize(50);
   const { handleStageWheel, handleStagePan } = useStageZoom();
   const { handleDragMove } = useStageDragFeedback({ updateDiagram: diagramState.updateDiagram });
 
+  // === 🎨 Diagramas e operações ===
   const operations = useDiagramOperations(
     {
       diagram: diagramState.diagram,
@@ -47,10 +57,9 @@ export default function App() {
       clearEditingState: diagramState.clearEditingState,
       selectedRelationshipType: diagramState.selectedRelationshipType,
     },
-    diagramType
+    diagramState.diagram.metadata.type
   );
 
-  // Agora usamos useStageInteractions — aqui está a lógica de criação por clique no stage
   const stageInteractions = useStageInteractions({
     creationState: diagramState.creationState,
     tool: diagramState.tool,
@@ -63,77 +72,127 @@ export default function App() {
     setConnectionState: diagramState.setConnectionState,
     setConnectionStart: diagramState.setConnectionStart,
     clearEditingState: diagramState.clearEditingState,
-    onMousePositionChange: undefined
   });
 
-  // Comunicação com VSCode (mantém nome do arquivo)
+  // === 🔄 Comunicação com VSCode ===
   const vsCodeComm = useVSCodeCommunication(
     diagramState.diagram,
-    diagramType,
-    (diagram) => {
-      diagramState.setDiagram(diagram);
-      setDiagramType(diagram.metadata.type);
-    },
-    () => `${diagramState.diagram.metadata.name || "Diagrama"}.uml`
+    diagramState.diagram.metadata.type,
+    (data) => {
+      if ((data as UMLProject).diagrams) {
+        const projectData = data as UMLProject;
+        setProject(projectData);
+        diagramState.setDiagram(projectData.diagrams[0]);
+        setActiveDiagramIndex(0);
+      } else {
+        diagramState.setDiagram(data as UMLDiagram);
+        setProject({
+          ...project,
+          diagrams: [data as UMLDiagram],
+        });
+        setActiveDiagramIndex(0);
+      }
+    }
   );
 
-  // confirmações
+  // === 🧭 Alternar entre diagramas ===
+  const handleSwitchDiagram = (index: number) => {
+    if (index < 0 || index >= project.diagrams.length) return;
+    const targetDiagram = project.diagrams[index];
+    setActiveDiagramIndex(index);
+    diagramState.setDiagram(targetDiagram);
+  };
+
+  // === ⌨️ Atalhos de teclado Ctrl+Tab / Ctrl+Shift+Tab ===
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "Tab") {
+        e.preventDefault();
+        const nextIndex = e.shiftKey
+          ? (activeDiagramIndex - 1 + project.diagrams.length) % project.diagrams.length
+          : (activeDiagramIndex + 1) % project.diagrams.length;
+        handleSwitchDiagram(nextIndex);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [activeDiagramIndex, project.diagrams.length]);
+
+  // === 🧩 Atualiza projeto quando o diagrama atual muda ===
+  useEffect(() => {
+    setProject((prev) => {
+      if (!prev.diagrams.length) return prev;
+      const updated = [...prev.diagrams];
+      updated[activeDiagramIndex] = diagramState.diagram;
+      return { ...prev, diagrams: updated, lastModified: new Date().toISOString() };
+    });
+  }, [diagramState.diagram, activeDiagramIndex]);
+
+  // === ➕ Novo diagrama ===
+  const handleNewDiagram = () => {
+    const newDiagram: UMLDiagram = {
+      metadata: {
+        version: "1.0",
+        name: `Diagrama ${project.diagrams.length + 1}`,
+        created: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        type: "usecase",
+        comments: "",
+      },
+      elements: [],
+      relationships: [],
+    };
+    setProject((prev) => ({ ...prev, diagrams: [...prev.diagrams, newDiagram] }));
+    setActiveDiagramIndex(project.diagrams.length);
+    diagramState.setDiagram(newDiagram);
+  };
+
+  // === ❌ Deletar diagrama ===
+  const handleDeleteDiagram = (index: number) => {
+    if (project.diagrams.length === 1) {
+      vsCodeComm.showMessage("error", "O projeto deve conter pelo menos um diagrama.");
+      return;
+    }
+    setConfirmDeleteDiagram({ open: true, index });
+  };
+
+
+  const confirmDelete = () => {
+    const index = confirmDeleteDiagram.index!;
+    const updated = project.diagrams.filter((_, i) => i !== index);
+    const newIndex = index >= updated.length ? updated.length - 1 : index;
+    setProject({ ...project, diagrams: updated });
+    setActiveDiagramIndex(newIndex);
+    diagramState.setDiagram(updated[newIndex]);
+    setConfirmDeleteDiagram({ open: false });
+  };
+
+  // === Exports / Delete ===
+  const handleExportPNG = async () => {
+    const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
+    if (stageContainer) {
+      await ExportService.exportToPNG(stageContainer, `${diagramState.diagram.metadata.name}.png`);
+      vsCodeComm.showMessage("info", "Exportado como PNG com sucesso!");
+    }
+  };
+
+  const handleExportPDF = async () => {
+    const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
+    if (stageContainer) {
+      await ExportService.exportToPDF(
+        stageContainer,
+        `${diagramState.diagram.metadata.name}.pdf`,
+        diagramState.diagram.metadata.comments || ""
+      );
+      vsCodeComm.showMessage("info", "Exportado como PDF com sucesso!");
+    }
+  };
+
   const [confirmState, setConfirmState] = useState({
     open: false,
     message: "",
     onConfirm: undefined as (() => void) | undefined,
   });
-
-  // atalhos
-  useKeyboardShortcuts({
-    onDelete: () => {
-      if (!diagramState.selectedElement) return;
-      handleDeleteRequest(diagramState.selectedElement);
-    },
-  });
-
-  // export handlers
-  const handleExportPNG = async () => {
-    const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
-    if (!stageContainer) return;
-    await ExportService.exportToPNG(stageContainer, `${diagramState.diagram.metadata.name || "diagrama"}.png`);
-    vsCodeComm.showMessage("info", "Exportado como PNG com sucesso!");
-  };
-
-  const handleExportPDF = async () => {
-    const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
-    if (!stageContainer) return;
-    // envia comentários que estão em metadata.comments
-    await ExportService.exportToPDF(
-      stageContainer,
-      `${diagramState.diagram.metadata.name || "diagrama"}.pdf`,
-      diagramState.diagram.metadata.comments || ""
-    );
-    vsCodeComm.showMessage("info", "Exportado como PDF com sucesso!");
-  };
-
-  // troca de tipo de diagrama — reset completo e ajuste do tipo de relacionamento padrão
-  const handleDiagramTypeChange = (type: "usecase" | "activity") => {
-    setDiagramType(type);
-    diagramState.setTool("select");
-    diagramState.setSelectedRelationshipType(type === "usecase" ? "association" : "control_flow");
-    diagramState.setDiagram({
-      metadata: {
-        version: "1.0",
-        name: "Novo Diagrama",
-        created: new Date().toISOString(),
-        lastModified: new Date().toISOString(),
-        type,
-        comments: "",
-      },
-      elements: [],
-      relationships: [],
-    });
-    diagramState.setSelectedElement(null);
-    diagramState.setCreationState("idle");
-    diagramState.setConnectionState("idle");
-    diagramState.setConnectionStart(null);
-  };
 
   const handleDeleteRequest = (id: string) => {
     const prepared = operations.prepareDeleteItem(id);
@@ -151,34 +210,77 @@ export default function App() {
     }
   };
 
+  useKeyboardShortcuts({
+    onDelete: () => {
+      if (diagramState.selectedElement) handleDeleteRequest(diagramState.selectedElement);
+    },
+    onEscape: () => diagramState.setSelectedElement(null),
+    onSave: () => vsCodeComm.handleSaveProject(project),
+    onNewDiagram: handleNewDiagram,
+  });
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+    <div className="app-container">
+      {/* Toolbar */}
       <Toolbar
         tool={diagramState.tool}
         onToolChange={operations.handleToolChange}
         onToggleEdit={operations.handleToggleEdit}
-        onSave={vsCodeComm.handleSave}
-        onSaveAs={vsCodeComm.handleSaveAs}
-        onLoad={vsCodeComm.handleLoad}
+        onSave={() => vsCodeComm.handleSaveProject(project)}
+        onSaveAs={() => vsCodeComm.handleSaveAsProject(project)}
+        onLoad={() => vsCodeComm.handleLoadProject()}
         onExportPNG={handleExportPNG}
         onExportPDF={handleExportPDF}
-        onDeleteRequested={() => {
-          if (diagramState.selectedElement) handleDeleteRequest(diagramState.selectedElement);
-        }}
+        onDeleteRequested={() =>
+          diagramState.selectedElement && handleDeleteRequest(diagramState.selectedElement)
+        }
         isEditing={diagramState.isEditing}
         selectedElement={diagramState.selectedElement}
         creationState={diagramState.creationState}
         connectionState={diagramState.connectionState}
-        diagramType={diagramType}
+        diagramType={diagramState.diagram.metadata.type}
         selectedRelationshipType={diagramState.selectedRelationshipType}
         onRelationshipTypeChange={diagramState.setSelectedRelationshipType}
-        onDiagramTypeChange={handleDiagramTypeChange}
+        onDiagramTypeChange={(t) =>
+          diagramState.updateDiagram((d) => ({ ...d, metadata: { ...d.metadata, type: t } }))
+        }
         onToggleSidebar={() => setShowSidebar((p) => !p)}
         showSidebar={showSidebar}
       />
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <div style={{ flex: "1 1 auto", position: "relative" }}>
+      {/* Abas de diagramas */}
+      <div className="diagram-tabs-container">
+        <div className="diagram-tabs-bar">
+          {project.diagrams.map((d, i) => (
+            <div
+              key={d.metadata.name}
+              className={`diagram-tab ${i === activeDiagramIndex ? "active" : ""}`}
+              onClick={() => handleSwitchDiagram(i)}
+            >
+              {d.metadata.name}
+              <X
+                size={14}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteDiagram(i);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          className="diagram-tab-new"
+          onClick={handleNewDiagram}
+          title="Novo Diagrama"
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+
+
+      {/* Canvas + Sidebar */}
+      <div className="app-main">
+        <div className="canvas-container">
           <Stage
             width={showSidebar ? stageSize.width - 280 : stageSize.width}
             height={stageSize.height}
@@ -208,13 +310,13 @@ export default function App() {
                     toElement={to}
                     isSelected={diagramState.selectedElement === rel.id}
                     onClick={operations.handleElementClick}
-                    diagramType={diagramType}
+                    diagramType={diagramState.diagram.metadata.type}
                   />
                 );
               })}
 
               {diagramState.diagram.elements.map((el) =>
-                diagramType === "usecase" ? (
+                diagramState.diagram.metadata.type === "usecase" ? (
                   <UseCaseComponent
                     key={el.id}
                     element={el as UseCaseElement}
@@ -251,12 +353,21 @@ export default function App() {
         )}
       </div>
 
+      {/* Diálogo de confirmação */}
       <ConfirmDialog
         open={confirmState.open}
         title="Excluir elemento"
         message={confirmState.message}
         onCancel={() => setConfirmState({ open: false, message: "", onConfirm: undefined })}
         onConfirm={() => confirmState.onConfirm?.()}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteDiagram.open}
+        title="Excluir diagrama"
+        message={`Tem certeza que deseja excluir o diagrama "${project.diagrams[confirmDeleteDiagram.index!]?.metadata.name}"?`}
+        onCancel={() => setConfirmDeleteDiagram({ open: false })}
+        onConfirm={confirmDelete}
       />
     </div>
   );
