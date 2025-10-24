@@ -256,7 +256,6 @@ export default function App() {
         onToolChange={operations.handleToolChange}
         onToggleEdit={operations.handleToggleEdit}
         onSave={() => vsCodeComm.handleSaveProject(project)}
-        onSaveAs={() => vsCodeComm.handleSaveAsProject(project)}
         onLoad={() => vsCodeComm.handleLoadProject()}
         onExportPNG={handleExportPNG}
         onExportPDF={handleExportPDF}

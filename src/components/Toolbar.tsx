@@ -27,7 +27,6 @@ interface ToolbarProps {
   onToolChange: (tool: Tool) => void;
   onToggleEdit: () => void;
   onSave: () => void;
-  onSaveAs: () => void;
   onLoad: () => void;
   onExportPNG: () => void;
   onExportPDF: () => void;
@@ -53,7 +52,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToolChange,
   onToggleEdit,
   onSave,
-  onSaveAs,
   onLoad,
   onExportPNG,
   onExportPDF,
@@ -245,19 +243,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <span>{showSidebar ? "Ocultar Propriedades" : "Mostrar Propriedades"}</span>
             </button>
           )}
-
-          {selectedElement && (
-            <button
-              onClick={onToggleEdit}
-              className="toolbar-button toolbar-button-success"
-              disabled={connectionState !== "idle" || creationState !== "idle"}
-              title="Editar elemento"
-            >
-              {isEditing ? <Save size={16} /> : <Edit size={16} />}
-              <span>{isEditing ? "Salvar" : "Editar"}</span>
-            </button>
-          )}
-
           <button
             onClick={onSave}
             className="toolbar-button toolbar-button-success"
@@ -266,16 +251,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <Save size={16} />
             <span>Salvar</span>
           </button>
-
-          <button
-            onClick={onSaveAs}
-            className="toolbar-button toolbar-button-secondary"
-            disabled={connectionState !== "idle" || creationState !== "idle"}
-          >
-            <Save size={16} />
-            <span>Salvar Como</span>
-          </button>
-
           <button
             onClick={onLoad}
             className="toolbar-button toolbar-button-secondary"
