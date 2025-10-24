@@ -96,6 +96,7 @@ export const useDiagramOperations = (
       setConnectionState('idle');
       setConnectionStart(null);
       setSelectedElement(id);
+      setTool('select');
     } else {
       setSelectedElement(id);
       setIsEditing(false);
@@ -143,26 +144,6 @@ export const useDiagramOperations = (
       setConnectionState('selecting-first');
     }
   }, [setCreationState, setConnectionState, setConnectionStart, setTool, setSelectedElement, setIsEditing]);
-
-  const handleToggleEdit = useCallback(() => {
-    const hasActiveOperation = connectionState !== 'idle' || creationState === 'placing';
-    if (hasActiveOperation || !selectedElement) return;
-
-    setIsEditing(!isEditing);
-
-    if (!isEditing) {
-      // entra em edição para o elemento selecionado
-      updateDiagram((prev: UMLDiagram) => ({
-        ...prev,
-        elements: prev.elements.map((element: UseCaseElement | ActivityElement) => ({
-          ...element,
-          isEditing: element.id === selectedElement
-        }))
-      }));
-    } else {
-      clearEditingState();
-    }
-  }, [connectionState, creationState, isEditing, selectedElement, setIsEditing, updateDiagram, clearEditingState]);
 
   const createNewElement = useCallback(
     (toolParam: Tool, x: number, y: number): UseCaseElement | ActivityElement => {
@@ -261,7 +242,6 @@ export const useDiagramOperations = (
     handleStageClick,
     handleTextEdit,
     handleToolChange,
-    handleToggleEdit,
     createNewElement,
     createNewRelationship,
     prepareDeleteItem

@@ -1,38 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  User,
-  Circle,
-  Square,
-  Diamond,
-  ArrowRight,
-  Save,
-  Edit,
-  FileDown,
-  FolderOpen,
-  X,
-  Image as ImageIcon,
-  Play,
-  GitFork,
-  GitMerge,
-  CircleDot,
-  Trash2,
-  LayoutPanelLeft,
-  PanelRight,
-  FilePlus,
+  User, Circle, Square, Diamond, ArrowRight, Save,
+  FileDown, FolderOpen, X, Image as ImageIcon, Play,
+  GitFork, GitMerge, CircleDot, Trash2, LayoutPanelLeft,
+  PanelRight, FilePlus, ChevronUp, ChevronDown
 } from "lucide-react";
 import { Tool, CreationState, RelationshipType } from "../types/umlTypes";
 
 interface ToolbarProps {
   tool: Tool;
   onToolChange: (tool: Tool) => void;
-  onToggleEdit: () => void;
   onSave: () => void;
   onLoad: () => void;
   onExportPNG: () => void;
   onExportPDF: () => void;
   onDeleteRequested: () => void;
-  isEditing: boolean;
-  selectedElement: string | null;
   creationState: CreationState;
   connectionState: "idle" | "selecting-first" | "selecting-second";
   diagramType: "usecase" | "activity";
@@ -42,22 +24,19 @@ interface ToolbarProps {
   onToggleSidebar?: () => void;
   showSidebar?: boolean;
   onNewDiagram?: () => void;
-  diagrams?: string[];
-  currentDiagram?: string;
-  onSwitchDiagram?: (name: string) => void;
+  projectName: string;
+  onProjectNameChange: (newName: string) => void;
+  selectedElement?: string | null; 
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
   tool,
   onToolChange,
-  onToggleEdit,
   onSave,
   onLoad,
   onExportPNG,
   onExportPDF,
   onDeleteRequested,
-  isEditing,
-  selectedElement,
   creationState,
   connectionState,
   diagramType,
@@ -67,51 +46,35 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleSidebar,
   showSidebar = true,
   onNewDiagram,
-  diagrams,
-  currentDiagram,
-  onSwitchDiagram,
+  projectName,
+  onProjectNameChange,
+  selectedElement,
 }) => {
-  const getButtonClass = (buttonTool: Tool) =>
-    `toolbar-button ${tool === buttonTool ? "toolbar-button-primary" : "toolbar-button-secondary"}`;
+  const [collapsed, setCollapsed] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(projectName);
+
+  const getToolIcon = (t: Tool) => {
+    const icons: Record<Tool, JSX.Element> = {
+      select: <Circle size={18} />,
+      actor: <User size={18} />,
+      usecase: <Circle size={18} />,
+      relationship: <ArrowRight size={18} />,
+      activity: <Square size={18} />,
+      decision: <Diamond size={18} />,
+      start: <Play size={18} />,
+      end: <Square size={18} />,
+      fork: <GitFork size={18} />,
+      join: <GitMerge size={18} />,
+      merge: <CircleDot size={18} />,
+    };
+    return icons[t];
+  };
 
   const getAvailableTools = (): Tool[] =>
     diagramType === "usecase"
       ? ["actor", "usecase", "relationship"]
       : ["activity", "decision", "relationship", "start", "end", "fork", "join", "merge"];
-
-  const getToolIcon = (t: Tool) => {
-    const icons: Record<Tool, JSX.Element> = {
-      select: <Circle size={16} />,
-      actor: <User size={16} />,
-      usecase: <Circle size={16} />,
-      relationship: <ArrowRight size={16} />,
-      activity: <Square size={16} />,
-      decision: <Diamond size={16} />,
-      start: <Play size={16} />,
-      end: <Square size={16} />,
-      fork: <GitFork size={16} />,
-      join: <GitMerge size={16} />,
-      merge: <CircleDot size={16} />,
-    };
-    return icons[t];
-  };
-
-  const getToolName = (t: Tool): string => {
-    const names: Record<Tool, string> = {
-      select: "Selecionar",
-      actor: "Ator",
-      usecase: "Caso de Uso",
-      relationship: "Relacionamento",
-      activity: "Atividade",
-      decision: "Decisão",
-      start: "Início",
-      end: "Fim",
-      fork: "Fork",
-      join: "Join",
-      merge: "Merge",
-    };
-    return names[t];
-  };
 
   const handleCancel = () => window.dispatchEvent(new Event("cancel-creation"));
 
@@ -121,69 +84,154 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     return "";
   };
 
-  return (
-    <div className="toolbar">
-      <div className="toolbar-row"
-      >
-        {/* Tipo de Diagrama */}
-        <div className="toolbar-section">
-          <span className="toolbar-label">Tipo:</span>
-          <select
-            value={diagramType}
-            onChange={(e) => onDiagramTypeChange(e.target.value as "usecase" | "activity")}
-            className="toolbar-select"
-            disabled={creationState !== "idle" || connectionState !== "idle"}
-          >
-            <option value="usecase">Casos de Uso</option>
-            <option value="activity">Atividades</option>
-          </select>
-        </div>
+  const handleBlur = () => {
+    setIsEditingName(false);
+    const newName = tempName.trim();
+    if (newName && newName !== projectName) onProjectNameChange(newName);
+  };
 
-        {/* Diagramas no Projeto */}
-        {diagrams && diagrams.length > 0 && (
-          <div className="toolbar-section">
-            <span className="toolbar-label">Diagrama:</span>
-            <select
-              value={currentDiagram}
-              onChange={(e) => onSwitchDiagram?.(e.target.value)}
-              className="toolbar-select"
+  console.log(`Selected Element: ${selectedElement}`);
+  console.log(`Connection State: ${connectionState}`);
+  console.log(`Creation State: ${creationState}`);
+
+  if (collapsed) {
+    return (
+      <div className="toolbar toolbar-collapsed">
+        <div className="toolbar-header">
+          {isEditingName ? (
+            <input
+              className="editable-title-input"
+              value={tempName}
+              autoFocus
+              onChange={(e) => setTempName(e.target.value)}
+              onBlur={handleBlur}
+              onKeyDown={(e) => e.key === "Enter" && handleBlur()}
+            />
+          ) : (
+            <span
+              className="toolbar-project-name"
+              title="Duplo clique para renomear projeto"
+              onDoubleClick={() => setIsEditingName(true)}
             >
-              {diagrams.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
+              {projectName}
+            </span>
+          )}
+
+          <button
+            className="toolbar-toggle"
+            title="Expandir Toolbar"
+            onClick={() => setCollapsed(false)}
+          >
+            <ChevronDown size={18} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`toolbar ${(creationState === "placing" || connectionState !== "idle") ? "active-mode" : ""}`}>
+      <div className="toolbar-header">
+        {isEditingName ? (
+          <input
+            className="editable-title-input"
+            value={tempName}
+            autoFocus
+            onChange={(e) => setTempName(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={(e) => e.key === "Enter" && handleBlur()}
+          />
+        ) : (
+          <h2
+            className="toolbar-project-name"
+            title="Duplo clique para renomear projeto"
+            onDoubleClick={() => setIsEditingName(true)}
+          >
+            {projectName}
+          </h2>
         )}
 
-        {/* Ferramentas */}
-        <div 
-          className="toolbar-section" 
-          style={
-            "flexGrow" in CSSStyleDeclaration.prototype ? { flexGrow: 1,justifyContent: "center" } : { flex: 1, justifyContent: "center" }
-          }
+        <button
+          className="toolbar-toggle"
+          title="Recolher Toolbar"
+          onClick={() => setCollapsed(true)}
         >
-          <span className="toolbar-label">Ferramentas:</span>
-          {getAvailableTools().map((availableTool) => (
-            <button
-              key={availableTool}
-              onClick={() => onToolChange(availableTool)}
-              className={getButtonClass(availableTool)}
-              disabled={creationState !== "idle" && tool !== availableTool}
-              title={getToolName(availableTool)}
-            >
-              {getToolIcon(availableTool)}
-              <span>{getToolName(availableTool)}</span>
-            </button>
-          ))}
-        </div>
-        {/* Tipo de Relação */}
-        {tool === "relationship" && (
-          <div className="toolbar-section">
-            <span className="toolbar-label">Relação:</span>
+          <ChevronUp size={18} />
+        </button>
+      </div>
+
+      <div className="toolbar-row">
+        <select
+          value={diagramType}
+          onChange={(e) => onDiagramTypeChange(e.target.value as "usecase" | "activity")}
+          className="toolbar-select"
+          title="Selecionar tipo de diagrama"
+        >
+          <option value="usecase">Casos de Uso</option>
+          <option value="activity">Atividades</option>
+        </select>
+
+        {getAvailableTools().map((t) => (
+          <button
+            key={t}
+            onClick={() => onToolChange(t)}
+            className={`toolbar-icon-button ${tool === t ? "active" : ""}`}
+            title={t.charAt(0).toUpperCase() + t.slice(1)}
+          >
+            {getToolIcon(t)}
+          </button>
+        ))}
+
+        <button onClick={onSave} className="toolbar-icon-button" title="Salvar">
+          <Save size={18} />
+        </button>
+
+        <button onClick={onLoad} className="toolbar-icon-button" title="Abrir">
+          <FolderOpen size={18} />
+        </button>
+
+        <button onClick={onExportPNG} className="toolbar-icon-button" title="Exportar PNG">
+          <ImageIcon size={18} />
+        </button>
+
+        <button onClick={onExportPDF} className="toolbar-icon-button" title="Exportar PDF">
+          <FileDown size={18} />
+        </button>
+
+        {onNewDiagram && (
+          <button onClick={onNewDiagram} className="toolbar-icon-button" title="Novo Diagrama">
+            <FilePlus size={18} />
+          </button>
+        )}
+
+        <button
+          onClick={onDeleteRequested}
+          className="toolbar-icon-button danger"
+          title="Excluir elemento selecionado"
+          disabled={!selectedElement || connectionState !== "idle" || creationState !== "idle"} 
+        >
+          <Trash2 size={18} />
+        </button>
+
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            className="toolbar-icon-button"
+            title={showSidebar ? "Ocultar propriedades" : "Mostrar propriedades"}
+          >
+            {showSidebar ? <PanelRight size={18} /> : <LayoutPanelLeft size={18} />}
+          </button>
+        )}
+      </div>
+
+      {(tool === "relationship" || connectionState !== "idle" || creationState === "placing") && (
+        <div className="toolbar-row toolbar-relationship-row">
+          {tool === "relationship" && (
             <select
               value={selectedRelationshipType}
               onChange={(e) => onRelationshipTypeChange(e.target.value as RelationshipType)}
               className="toolbar-select"
+              title="Tipo de relacionamento"
             >
               {diagramType === "usecase" ? (
                 <>
@@ -200,112 +248,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 </>
               )}
             </select>
-          </div>
-        )}
-        <div className="toolbar-section" >
-          {/* Excluir Elemento */}
-          <button
-            onClick={onDeleteRequested}
-            className="toolbar-button toolbar-button-danger"
-            disabled={!selectedElement || connectionState !== "idle" || creationState !== "idle"}
-          >
-              <Trash2 size={16} />
-              <span>Excluir</span>
-          </button>
-        </div>
-      </div>
+          )}
 
-      <div className="toolbar-row">
-        {/* Ações */}
-        <div className="toolbar-section">
-          <span className="toolbar-label">Ações:</span>
-
-          {/* Novo Diagrama */}
-          {onNewDiagram && (
+          {(creationState === "placing" || connectionState !== "idle") && (
             <button
-              onClick={onNewDiagram}
-              className="toolbar-button toolbar-button-secondary"
-              disabled={connectionState !== "idle" || creationState !== "idle"}
-              title="Novo Diagrama"
+              onClick={handleCancel}
+              className="toolbar-icon-button danger"
+              title="Cancelar operação atual"
             >
-              <FilePlus size={16} />
-              <span>Novo</span>
+              <X size={18} />
             </button>
           )}
 
-          {onToggleSidebar && (
-            <button
-              onClick={onToggleSidebar}
-              className="toolbar-button toolbar-button-secondary"
-              title="Mostrar/Ocultar propriedades"
-            >
-              {showSidebar ? <PanelRight size={16} /> : <LayoutPanelLeft size={16} />}
-              <span>{showSidebar ? "Ocultar Propriedades" : "Mostrar Propriedades"}</span>
-            </button>
-          )}
-          <button
-            onClick={onSave}
-            className="toolbar-button toolbar-button-success"
-            disabled={connectionState !== "idle" || creationState !== "idle"}
-          >
-            <Save size={16} />
-            <span>Salvar</span>
-          </button>
-          <button
-            onClick={onLoad}
-            className="toolbar-button toolbar-button-secondary"
-            disabled={connectionState !== "idle" || creationState !== "idle"}
-          >
-            <FolderOpen size={16} />
-            <span>Abrir</span>
-          </button>
-
-          <button
-            onClick={onExportPNG}
-            className="toolbar-button toolbar-button-export"
-            disabled={connectionState !== "idle" || creationState !== "idle"}
-          >
-            <ImageIcon size={16} />
-            <span>PNG</span>
-          </button>
-
-          <button
-            onClick={onExportPDF}
-            className="toolbar-button toolbar-button-export"
-            disabled={connectionState !== "idle" || creationState !== "idle"}
-          >
-            <FileDown size={16} />
-            <span>PDF</span>
-          </button>
+          <span className="toolbar-status">{getConnectionText()}</span>
         </div>
-      </div>
-      <div className="toolbar-row">
-        {/* Cancelar */}
-        {(creationState === "placing" || connectionState !== "idle") && (
-          <button
-            onClick={handleCancel}
-            className="toolbar-button toolbar-button-danger"
-            title="Cancelar operação"
-          >
-            <X size={16} />
-            <span>Cancelar</span>
-          </button>
-        )}
-      </div> 
-      <div className="toolbar-row">
-        {/* Status */}
-        <div className="toolbar-section toolbar-status-section">
-          <span className="toolbar-status">
-            {connectionState !== "idle"
-              ? getConnectionText()
-              : creationState === "placing"
-              ? "Clique para posicionar o elemento..."
-              : selectedElement
-              ? `Selecionado: ${selectedElement.slice(0, 8)}...`
-              : "Selecione ou crie novos elementos"}
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

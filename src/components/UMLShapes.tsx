@@ -1,17 +1,19 @@
 import React from "react";
 import { Group, Circle, Line, Ellipse, Rect } from "react-konva";
 
-// Props comuns com seleção suave
+/**
+ * Retorna propriedades comuns de desenho com realce visual quando selecionado.
+ */
 const getCommonProps = (
   strokeColor: string,
   strokeWidth: number,
   isSelected: boolean
 ) => ({
-  stroke: "#000000", // 🔹 Linhas sempre pretas
-  strokeWidth,
-  shadowColor: isSelected ? strokeColor : "transparent",
-  shadowBlur: isSelected ? 8 : 0,
-  shadowOpacity: isSelected ? 0.25 : 0,
+  stroke: isSelected ? "#2563eb" : "#000000", // azul quando selecionado
+  strokeWidth: isSelected ? strokeWidth * 1.5 : strokeWidth,
+  shadowColor: isSelected ? "#60a5fa" : "transparent",
+  shadowBlur: isSelected ? 10 : 0,
+  shadowOpacity: isSelected ? 0.7 : 0,
   listening: true,
   fillEnabled: false,
 });
@@ -22,19 +24,12 @@ export const drawActor = (
   y: number,
   width: number,
   height: number,
-  color: string,
+  _color: string,
   strokeWidth: number,
   isSelected: boolean
 ) => {
-  const stroke = "#000000"; // 🔹 Linhas sempre pretas
-  const props = {
-    stroke,
-    strokeWidth,
-    shadowColor: isSelected ? stroke : "transparent",
-    shadowBlur: isSelected ? 6 : 0,
-    shadowOpacity: isSelected ? 0.2 : 0,
-    listening: true,
-  };
+  const stroke = isSelected ? "#2563eb" : "#000000";
+  const shadow = isSelected ? "#60a5fa" : "transparent";
 
   // 🎨 proporções ajustadas
   const headRadius = Math.min(width, height) * 0.12;
@@ -43,12 +38,19 @@ export const drawActor = (
 
   const bodyTopY = headCenterY + headRadius + 2;
   const bodyBottomY = height * 0.6;
-
   const armY = bodyTopY + (bodyBottomY - bodyTopY) * 0.25;
   const armLength = width * 0.35;
-
   const legSpread = width * 0.25;
   const legEndY = height * 0.95;
+
+  const props = {
+    stroke,
+    strokeWidth: isSelected ? strokeWidth * 1.5 : strokeWidth,
+    shadowColor: shadow,
+    shadowBlur: isSelected ? 8 : 0,
+    shadowOpacity: isSelected ? 0.6 : 0,
+    listening: true,
+  };
 
   return (
     <Group x={x} y={y} listening>
@@ -67,33 +69,34 @@ export const drawUseCase = (
   y: number,
   width: number,
   height: number,
-  color: string,
+  _color: string,
   strokeWidth: number,
   isSelected: boolean
 ) => {
-  const stroke = "#000000"; // 🔹 Linhas sempre pretas
-  const props = {
-    stroke,
-    strokeWidth,
-    shadowColor: isSelected ? stroke : "transparent",
-    shadowBlur: isSelected ? 6 : 0,
-    shadowOpacity: isSelected ? 0.2 : 0,
-    listening: true,
-  };
-
+  const stroke = isSelected ? "#2563eb" : "#000000";
+  const shadow = isSelected ? "#60a5fa" : "transparent";
   const cx = width / 2;
   const cy = height / 2;
-  const rx = width * 0.50;
+  const rx = width * 0.5;
   const ry = height * 0.4;
 
   return (
     <Group x={x} y={y} listening>
-      {/* camada preenchida */}
-      <Ellipse x={cx} y={cy} radiusX={rx} radiusY={ry} {...props} />
+      <Ellipse
+        x={cx}
+        y={cy}
+        radiusX={rx}
+        radiusY={ry}
+        stroke={stroke}
+        strokeWidth={isSelected ? strokeWidth * 1.5 : strokeWidth}
+        shadowColor={shadow}
+        shadowBlur={isSelected ? 10 : 0}
+        shadowOpacity={isSelected ? 0.6 : 0}
+        fillEnabled={false}
+      />
     </Group>
   );
 };
-
 
 // === 🟦 Atividade ===
 export const drawActivity = (
@@ -143,8 +146,11 @@ export const drawStart = (
         y={cy}
         radius={r}
         fill={color}
-        stroke={isSelected ? "#6366f1" : "transparent"} // 🟣 borda roxa quando selecionado
-        strokeWidth={isSelected ? strokeWidth : 0}
+        stroke={isSelected ? "#2563eb" : "transparent"}
+        strokeWidth={isSelected ? strokeWidth * 1.5 : 0}
+        shadowColor={isSelected ? "#60a5fa" : "transparent"}
+        shadowBlur={isSelected ? 10 : 0}
+        shadowOpacity={isSelected ? 0.6 : 0}
       />
     </Group>
   );
@@ -166,15 +172,16 @@ export const drawEnd = (
 
   return (
     <Group x={x} y={y} listening>
-      {/* círculo externo */}
       <Circle
         x={cx}
         y={cy}
         radius={r}
-        stroke={isSelected ? "#6366f1" : color}
-        strokeWidth={strokeWidth}
+        stroke={isSelected ? "#2563eb" : color}
+        strokeWidth={isSelected ? strokeWidth * 1.5 : strokeWidth}
+        shadowColor={isSelected ? "#60a5fa" : "transparent"}
+        shadowBlur={isSelected ? 10 : 0}
+        shadowOpacity={isSelected ? 0.6 : 0}
       />
-      {/* círculo interno */}
       <Circle x={cx} y={cy} radius={r * 0.65} fill={color} />
     </Group>
   );
@@ -202,20 +209,21 @@ export const drawDecision = (
   );
 };
 
-// === 🟫 Fork / Join (orientação automática) ===
+// === 🟫 Fork / Join ===
 export const drawFork = (
   x: number,
   y: number,
   width: number,
   height: number,
   color: string,
-  _strokeWidth: number,
-  _isSelected: boolean
+  strokeWidth: number,
+  isSelected: boolean
 ) => {
-  const isHorizontal = width > height * 1.5; // se largura for bem maior, é horizontal
+  const isHorizontal = width > height * 1.5;
+  const fillColor = color;
+  const stroke = isSelected ? "#2563eb" : "transparent";
 
   if (isHorizontal) {
-    // 🔸 Barra horizontal (largura longa, altura fina)
     const barHeight = Math.min(height * 0.15, 12);
     const offsetY = (height - barHeight) / 2;
     return (
@@ -225,12 +233,16 @@ export const drawFork = (
           y={offsetY}
           width={width}
           height={barHeight}
-          fill={color}
+          fill={fillColor}
+          stroke={stroke}
+          strokeWidth={isSelected ? strokeWidth * 1.5 : 0}
+          shadowColor={isSelected ? "#60a5fa" : "transparent"}
+          shadowBlur={isSelected ? 10 : 0}
+          shadowOpacity={isSelected ? 0.6 : 0}
         />
       </Group>
     );
   } else {
-    // 🔹 Barra vertical (altura longa, largura fina)
     const barWidth = Math.min(width * 0.15, 12);
     const offsetX = (width - barWidth) / 2;
     return (
@@ -240,7 +252,12 @@ export const drawFork = (
           y={0}
           width={barWidth}
           height={height}
-          fill={color}
+          fill={fillColor}
+          stroke={stroke}
+          strokeWidth={isSelected ? strokeWidth * 1.5 : 0}
+          shadowColor={isSelected ? "#60a5fa" : "transparent"}
+          shadowBlur={isSelected ? 10 : 0}
+          shadowOpacity={isSelected ? 0.6 : 0}
         />
       </Group>
     );

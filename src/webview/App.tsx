@@ -254,7 +254,6 @@ export default function App() {
       <Toolbar
         tool={diagramState.tool}
         onToolChange={operations.handleToolChange}
-        onToggleEdit={operations.handleToggleEdit}
         onSave={() => vsCodeComm.handleSaveProject(project)}
         onLoad={() => vsCodeComm.handleLoadProject()}
         onExportPNG={handleExportPNG}
@@ -262,7 +261,6 @@ export default function App() {
         onDeleteRequested={() =>
           diagramState.selectedElement && handleDeleteRequest(diagramState.selectedElement)
         }
-        isEditing={diagramState.isEditing}
         selectedElement={diagramState.selectedElement}
         creationState={diagramState.creationState}
         connectionState={diagramState.connectionState}
@@ -272,11 +270,9 @@ export default function App() {
         onDiagramTypeChange={handleChangeDiagramType}
         onToggleSidebar={() => setShowSidebar((p) => !p)}
         showSidebar={showSidebar}
-      />
-
-      <EditableTitle
-        value={project.name}
-        onChange={(newName) =>
+        onNewDiagram={handleNewDiagram}
+        projectName={project.name}
+        onProjectNameChange={(newName) =>
           setProject((prev) => ({ ...prev, name: newName, lastModified: new Date().toISOString() }))
         }
       />
