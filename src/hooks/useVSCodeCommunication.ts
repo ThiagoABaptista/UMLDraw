@@ -64,15 +64,6 @@ export const useVSCodeCommunication = (
     });
   }, []);
 
-  /** 🔹 Salvar projeto como (.umlproj) */
-  const handleSaveAsProject = useCallback((project: UMLProject) => {
-    vscodePostMessage({
-      command: "saveAsProject",
-      project,
-      fileName: `${project.name || "Projeto"}.umlproj`,
-    });
-  }, []);
-
   /** 🔹 Carregar arquivo */
   const handleLoad = useCallback(() => {
     vscodePostMessage({ command: "requestLoad" });
@@ -108,7 +99,6 @@ export const useVSCodeCommunication = (
     handleSaveToFile,
     handleSaveAs,
     handleSaveProject,
-    handleSaveAsProject,
     handleLoad,
     handleLoadProject,
     showMessage,
