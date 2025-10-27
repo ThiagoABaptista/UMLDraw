@@ -9,7 +9,7 @@ const getCommonProps = (
   strokeWidth: number,
   isSelected: boolean
 ) => ({
-  stroke: isSelected ? "#2563eb" : "#000000", // azul quando selecionado
+  stroke: isSelected ? "#2563eb" : strokeColor, // azul quando selecionado
   strokeWidth: isSelected ? strokeWidth * 1.5 : strokeWidth,
   shadowColor: isSelected ? "#60a5fa" : "transparent",
   shadowBlur: isSelected ? 10 : 0,
@@ -24,11 +24,11 @@ export const drawActor = (
   y: number,
   width: number,
   height: number,
-  _color: string,
+  color: string,
   strokeWidth: number,
   isSelected: boolean
 ) => {
-  const stroke = isSelected ? "#2563eb" : "#000000";
+  const stroke = isSelected ? "#2563eb" : color;
   const shadow = isSelected ? "#60a5fa" : "transparent";
 
   // 🎨 proporções ajustadas
@@ -69,11 +69,11 @@ export const drawUseCase = (
   y: number,
   width: number,
   height: number,
-  _color: string,
+  color: string,
   strokeWidth: number,
   isSelected: boolean
 ) => {
-  const stroke = isSelected ? "#2563eb" : "#000000";
+  const stroke = isSelected ? "#2563eb" : color;
   const shadow = isSelected ? "#60a5fa" : "transparent";
   const cx = width / 2;
   const cy = height / 2;
@@ -219,51 +219,30 @@ export const drawFork = (
   strokeWidth: number,
   isSelected: boolean
 ) => {
-  const isHorizontal = width > height * 1.5;
   const fillColor = color;
   const stroke = isSelected ? "#2563eb" : "transparent";
+  const barHeight = Math.min(height * 0.15, 12);
+  const offsetY = (height - barHeight) / 2;
 
-  if (isHorizontal) {
-    const barHeight = Math.min(height * 0.15, 12);
-    const offsetY = (height - barHeight) / 2;
-    return (
-      <Group x={x} y={y} listening>
-        <Rect
-          x={0}
-          y={offsetY}
-          width={width}
-          height={barHeight}
-          fill={fillColor}
-          stroke={stroke}
-          strokeWidth={isSelected ? strokeWidth * 1.5 : 0}
-          shadowColor={isSelected ? "#60a5fa" : "transparent"}
-          shadowBlur={isSelected ? 10 : 0}
-          shadowOpacity={isSelected ? 0.6 : 0}
-        />
-      </Group>
-    );
-  } else {
-    const barWidth = Math.min(width * 0.15, 12);
-    const offsetX = (width - barWidth) / 2;
-    return (
-      <Group x={x} y={y} listening>
-        <Rect
-          x={offsetX}
-          y={0}
-          width={barWidth}
-          height={height}
-          fill={fillColor}
-          stroke={stroke}
-          strokeWidth={isSelected ? strokeWidth * 1.5 : 0}
-          shadowColor={isSelected ? "#60a5fa" : "transparent"}
-          shadowBlur={isSelected ? 10 : 0}
-          shadowOpacity={isSelected ? 0.6 : 0}
-        />
-      </Group>
-    );
-  }
+  return (
+    <Group x={x} y={y} listening>
+      <Rect
+        x={0}
+        y={offsetY}
+        width={width}
+        height={barHeight}
+        fill={fillColor}
+        stroke={stroke}
+        strokeWidth={isSelected ? strokeWidth * 1.5 : 0}
+        shadowColor={isSelected ? "#60a5fa" : "transparent"}
+        shadowBlur={isSelected ? 10 : 0}
+        shadowOpacity={isSelected ? 0.6 : 0}
+      />
+    </Group>
+  );
 };
 
+// === 🟫 Join ===
 export const drawJoin = drawFork;
 
 // === 🟣 Merge ===

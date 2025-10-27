@@ -1,6 +1,4 @@
-// src/utils/iconMapping.ts - VERSÃO SIMPLIFICADA E FUNCIONAL
 import { ActivityElement, UseCaseElement } from '../types/umlTypes';
-import { umlSvgColors } from '../types/umlSvgColors';
 
 // Importações diretas dos SVGs
 import actorSvg from '../assets/icons/gaphor/uml/gaphor-actor-symbolic.svg';
@@ -32,7 +30,7 @@ export const umlSvgContent: Record<string, string> = {
 
 // função simples de fallback
 export const getFallbackSvg = (elementType: string): string => {
-  const color = umlSvgColors[elementType] || '#374151';
+  const color = '#374151';
   return `
     <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
       <rect width="40" height="40" fill="${color}20" stroke="${color}" stroke-width="2" rx="5"/>

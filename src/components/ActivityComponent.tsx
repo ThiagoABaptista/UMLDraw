@@ -2,7 +2,7 @@ import React from "react";
 import { Group } from "react-konva";
 import Konva from "konva";
 import { EditableText } from "./EditableText";
-import { GaphorIcon } from "./GaphorIcon";
+import { ElementIcon } from "./ElementIcon";
 import { ActivityElement } from "../types/umlTypes";
 
 interface ActivityComponentProps {
@@ -51,7 +51,7 @@ export const ActivityComponent: React.FC<ActivityComponentProps> = ({
       onClick={() => onClick(element.id)}
       listening={true}
     >
-      <GaphorIcon
+      <ElementIcon
         element={element}
         x={0}
         y={0}

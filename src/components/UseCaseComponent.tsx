@@ -2,7 +2,7 @@ import React from "react";
 import { Group } from "react-konva";
 import Konva from "konva";
 import { UseCaseElement } from "../types/umlTypes";
-import { GaphorIcon } from "./GaphorIcon";
+import { ElementIcon } from "./ElementIcon";
 import { EditableText } from "./EditableText";
 
 interface UseCaseComponentProps {
@@ -57,7 +57,7 @@ export const UseCaseComponent: React.FC<UseCaseComponentProps> = ({
       onClick={() => onClick(element.id)}
       listening={true}
     >
-      <GaphorIcon
+      <ElementIcon
         element={element}
         x={0}
         y={0}

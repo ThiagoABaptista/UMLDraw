@@ -148,7 +148,6 @@ export const useDiagramOperations = (
   const createNewElement = useCallback(
     (toolParam: Tool, x: number, y: number): UseCaseElement | ActivityElement => {
       const defaults = getElementDefaults(toolParam);
-      console.log("Creating new element:", toolParam, { x, y, defaults });
 
       const baseElement = {
         id: uuidv4(),
@@ -157,7 +156,8 @@ export const useDiagramOperations = (
         y: y - defaults.height / 2,
         width: defaults.width,
         height: defaults.height,
-        isEditing: false
+        isEditing: false,
+        color: '#000000'
       };
 
       return {

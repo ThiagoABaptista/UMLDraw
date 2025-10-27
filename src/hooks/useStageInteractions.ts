@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState, useRef  } from "react";
 import {
   Tool,
   UseCaseElement,
@@ -38,6 +38,9 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
     clearEditingState,
     onMousePositionChange,
   } = props;
+  const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null);
+  const targetPosition = useRef<{ x: number; y: number } | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const getCanvasCoords = (stage: any) => {
     const pointer = stage.getPointerPosition();
@@ -104,13 +107,36 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
   const handleMouseMove = useCallback(
     (e: any) => {
       const stage = e.target.getStage();
-      if (!stage || !onMousePositionChange) return;
+      if (!stage) return;
 
       const pos = getCanvasCoords(stage);
-      onMousePositionChange(pos);
+      targetPosition.current = pos;
+      if (onMousePositionChange) onMousePositionChange(pos);
     },
     [onMousePositionChange]
   );
+  useEffect(() => {
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+    const animate = () => {
+      if (targetPosition.current && previewPosition) {
+        const smoothed = {
+          x: lerp(previewPosition.x, targetPosition.current.x, 0.15), // 👈 suavização
+          y: lerp(previewPosition.y, targetPosition.current.y, 0.15),
+        };
+        setPreviewPosition(smoothed);
+      } else if (targetPosition.current && !previewPosition) {
+        setPreviewPosition(targetPosition.current);
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [previewPosition]);
 
   useEffect(() => {
     const cancelListener = () => {
@@ -133,5 +159,5 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
     setSelectedElement,
   ]);
 
-  return { handleStageClick, handleMouseMove };
+  return { handleStageClick, handleMouseMove, previewPosition };
 };

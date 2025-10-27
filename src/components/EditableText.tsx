@@ -65,6 +65,8 @@ export const EditableText: React.FC<EditableTextProps> = ({
       const textarea = document.createElement("textarea");
       textarea.className = "editable-textarea";
       textarea.value = currentText;
+
+      // Aplica apenas posicionamento e dimensões — o visual vem do CSS
       textarea.style.position = "fixed";
       textarea.style.top = `${textareaY}px`;
       textarea.style.left = `${textareaX}px`;
@@ -80,7 +82,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
       textarea.style.padding = "0";
       textarea.style.margin = "0";
       textarea.style.resize = "none";
-      textarea.style.lineHeight = "1.3";
+      textarea.style.lineHeight = "1";
       textarea.style.overflow = "hidden";
       textarea.style.whiteSpace = "pre";
       textarea.style.boxShadow = "none";
@@ -89,10 +91,12 @@ export const EditableText: React.FC<EditableTextProps> = ({
       textarea.style.caretColor = fill;
       textarea.style.transition = "opacity 0.15s ease-in-out";
       textarea.style.opacity = "0";
+      textarea.style.background = "rgba(255, 255, 255, 0.3)";
 
+      // === Anexa ao DOM ===
       document.body.appendChild(textarea);
 
-      // 🎨 Fade-in suave
+      // Fade-in suave
       requestAnimationFrame(() => {
         textarea.style.opacity = "1";
       });

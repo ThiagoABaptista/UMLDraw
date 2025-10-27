@@ -1,7 +1,7 @@
 import React from "react";
 import { Group } from "react-konva";
 import { Tool } from "../types/umlTypes";
-import { GaphorIcon } from "./GaphorIcon";
+import { ElementIcon } from "./ElementIcon";
 
 interface ElementPreviewProps {
   tool: Tool;
@@ -33,7 +33,7 @@ export const ElementPreview: React.FC<ElementPreviewProps> = ({
 
   return (
     <Group x={x} y={y} opacity={0.7} listening={false}>
-      <GaphorIcon
+      <ElementIcon
         element={element}
         x={0}
         y={0}

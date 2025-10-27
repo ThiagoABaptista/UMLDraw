@@ -1,7 +1,6 @@
 import React from "react";
 import { Group, Rect } from "react-konva";
 import { ActivityElement, UseCaseElement } from "../types/umlTypes";
-import { umlSvgColors } from "../types/umlSvgColors";
 import { getElementDefaults } from "../utils/diagramDefaults";
 
 // Funções de desenho baseadas no canvas
@@ -17,7 +16,7 @@ import {
   drawJoin,
 } from "./UMLShapes";
 
-interface GaphorIconProps {
+interface ElementIconProps {
   element: UseCaseElement | ActivityElement;
   x: number;
   y: number;
@@ -27,9 +26,9 @@ interface GaphorIconProps {
 }
 
 /**
- * 🧠 GaphorIcon - desenha os ícones UML diretamente no Canvas (Konva)
+ * ElementIcon - desenha os ícones UML diretamente no Canvas (Konva)
  */
-export const GaphorIcon: React.FC<GaphorIconProps> = ({
+export const ElementIcon: React.FC<ElementIconProps> = ({
   element,
   x,
   y,
@@ -38,13 +37,12 @@ export const GaphorIcon: React.FC<GaphorIconProps> = ({
   isSelected = false,
 }) => {
   const defaults = getElementDefaults(element.type);
-  const color = umlSvgColors[element.type] || "#111827";
+  const color = element.color || "#000000";
   const scale = defaults.scaleBoost ?? 1.0;
   const strokeWidth = Math.max(1, 1.5 * scale);
 
   // 🔁 Escolhe a função de desenho conforme o tipo UML
   const renderShape = () => {
-    console.log("Rendering shape:", element.type, { width, height, scale });
     switch (element.type) {
       case "actor":
         return drawActor(x, y, width, height, color, strokeWidth, isSelected);

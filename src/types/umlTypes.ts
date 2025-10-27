@@ -1,40 +1,59 @@
 import { umlSvgColors } from "./umlSvgColors";
 
-export interface UseCaseElement {
+/**
+ * === Tipos base de elementos ===
+ * Ambos compartilham campos comuns para posição, tamanho e edição.
+ */
+interface BaseUMLElement {
   id: string;
-  type: 'actor' | 'usecase' | 'object' | 'note' | 'association' | 'generalization' | 'extend' | 'include';
   name: string;
   x: number;
   y: number;
   width: number;
   height: number;
+
+  /** Indica se o nome está sendo editado no canvas */
   isEditing?: boolean;
+
+  /** Cor do elemento, baseada na paleta padronizada, com fallback em tempo de execução (#000000) */
   color?: keyof typeof umlSvgColors;
 }
-
-export interface ActivityElement {
-  id: string;
+/**
+ * === 🧍 Elementos do diagrama de caso de uso ===
+ */
+export interface UseCaseElement extends BaseUMLElement {
   type:
-    | 'start'
-    | 'end'
-    | 'activity'
-    | 'decision'
-    | 'merge'
-    | 'fork'
-    | 'join'
-    | 'control_flow'
-    | 'realization'
-    | 'swimlane'
-    | 'end_flow';
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  isEditing?: boolean;
-  color?: keyof typeof umlSvgColors;
+    | "actor"
+    | "usecase"
+    | "object"
+    | "note"
+    | "association"
+    | "generalization"
+    | "extend"
+    | "include";
 }
 
+/**
+ * === ⚙️ Elementos do diagrama de atividades ===
+ */
+export interface ActivityElement extends BaseUMLElement {
+  type:
+    | "start"
+    | "end"
+    | "activity"
+    | "decision"
+    | "merge"
+    | "fork"
+    | "join"
+    | "control_flow"
+    | "realization"
+    | "swimlane"
+    | "end_flow";
+}
+
+/**
+ * === Relações UML ===
+ */
 export interface UMLRelationship {
   id: string;
   from: string;
@@ -44,6 +63,9 @@ export interface UMLRelationship {
   guard?: string;
 }
 
+/**
+ * === Estruturas de diagrama e projeto ===
+ */
 export interface DiagramMetadata {
   version: string;
   name: string;
@@ -71,6 +93,9 @@ export interface DiagramFile extends UMLDiagram {
   viewport?: { scale: number; offset: { x: number; y: number } };
 }
 
+/**
+ * === Estados e tipos auxiliares ===
+ */
 export type Tool =
   | "select"
   | "actor"

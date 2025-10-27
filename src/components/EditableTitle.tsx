@@ -1,3 +1,4 @@
+// src/components/EditableTitle.tsx
 import React, { useState } from "react";
 
 interface EditableTitleProps {
@@ -14,8 +15,16 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({ value, onChange })
     if (tempValue.trim()) onChange(tempValue);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleBlur();
+    else if (e.key === "Escape") {
+      setTempValue(value);
+      setIsEditing(false);
+    }
+  };
+
   return (
-    <div className="editable-title">
+    <div className={`editable-title ${isEditing ? "editing" : ""}`}>
       {isEditing ? (
         <input
           className="editable-title-input"
@@ -23,11 +32,11 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({ value, onChange })
           autoFocus
           onChange={(e) => setTempValue(e.target.value)}
           onBlur={handleBlur}
-          onKeyDown={(e) => e.key === "Enter" && handleBlur()}
+          onKeyDown={handleKeyDown}
         />
       ) : (
         <h2
-          className="editable-title-text"
+          className="editable-title-text toolbar-project-name"
           onDoubleClick={() => setIsEditing(true)}
           title="Clique duas vezes para renomear o projeto"
         >

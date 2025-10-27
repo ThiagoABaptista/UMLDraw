@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import {
-  User, Circle, Square, Diamond, ArrowRight, Save,
-  FileDown, FolderOpen, X, Image as ImageIcon, Play,
-  GitFork, GitMerge, CircleDot, Trash2, LayoutPanelLeft,
-  PanelRight, FilePlus, ChevronUp, ChevronDown
+  User, Square, Diamond, ArrowRight, Save,
+  FileDown, FolderOpen, X, Image as ImageIcon,
+  GitFork, GitMerge, Trash2, LayoutPanelLeft,
+  PanelRight, FilePlus, ChevronUp, ChevronDown, Merge,
+  Circle,
+  CircleDot,
+  RectangleHorizontal
 } from "lucide-react";
 import { Tool, CreationState, RelationshipType } from "../types/umlTypes";
 
@@ -55,20 +58,100 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const [tempName, setTempName] = useState(projectName);
 
   const getToolIcon = (t: Tool) => {
-    const icons: Record<Tool, JSX.Element> = {
-      select: <Circle size={18} />,
-      actor: <User size={18} />,
-      usecase: <Circle size={18} />,
-      relationship: <ArrowRight size={18} />,
-      activity: <Square size={18} />,
-      decision: <Diamond size={18} />,
-      start: <Play size={18} />,
-      end: <Square size={18} />,
-      fork: <GitFork size={18} />,
-      join: <GitMerge size={18} />,
-      merge: <CircleDot size={18} />,
+    const color = "#111827";
+
+    const shapeStyle: React.CSSProperties = {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "22px",
+      height: "22px",
+      position: "relative",
     };
-    return icons[t];
+
+    switch (t) {
+      case "select":
+        return (
+          <div style={shapeStyle}>
+            <div
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: "10px solid transparent",
+                borderRight: "10px solid transparent",
+                borderBottom: `14px solid ${color}`,
+                transform: "rotate(90deg)",
+                opacity: 0.8,
+              }}
+            />
+          </div>
+        );
+
+      case "actor":
+        return (
+          <User size={18} />
+        );
+
+      case "usecase":
+        return (
+          <div style={shapeStyle}>
+            <div
+              style={{
+                width: "20px",
+                height: "12px",
+                borderRadius: "50%",
+                border: `1.5px solid ${color}`,
+              }}
+            />
+          </div>
+        );
+
+      case "relationship":
+        return (
+          <div style={shapeStyle}>
+            <ArrowRight size={20} strokeWidth={2} color={color} />
+          </div>
+        );
+
+      case "activity":
+        return (
+          <RectangleHorizontal size={18} />
+        );
+
+      case "decision":
+        return (
+          <Diamond size={18} />
+        );
+
+      case "start":
+        return (
+          <Circle size={18} />
+        );
+
+      case "end":
+        return (
+          <CircleDot size={18} />
+        );
+
+      case "fork":
+        return (
+          <GitFork size={18} />
+        );
+      case "join":
+        return (
+          <GitMerge size={18} />
+        );
+
+      case "merge":
+        return (
+           <Merge size={18} />
+        );
+
+
+
+      default:
+        return <Square size={20} color={color} />;
+    }
   };
 
   const getAvailableTools = (): Tool[] =>
@@ -89,10 +172,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const newName = tempName.trim();
     if (newName && newName !== projectName) onProjectNameChange(newName);
   };
-
-  console.log(`Selected Element: ${selectedElement}`);
-  console.log(`Connection State: ${connectionState}`);
-  console.log(`Creation State: ${creationState}`);
 
   if (collapsed) {
     return (
@@ -176,7 +255,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             key={t}
             onClick={() => onToolChange(t)}
             className={`toolbar-icon-button ${tool === t ? "active" : ""}`}
-            title={t.charAt(0).toUpperCase() + t.slice(1)}
+            title={{
+              actor: "Ator",
+              usecase: "Caso de Uso",
+              relationship: "Relacionamento",
+              activity: "Atividade",
+              decision: "Decisão",
+              start: "Início",
+              end: "Fim",
+              fork: "Ramo Paralelo (Fork)",
+              join: "Junção (Join)",
+              merge: "Mesclagem (Merge)",
+              select: "Selecionar",
+            }[t] || t}
           >
             {getToolIcon(t)}
           </button>

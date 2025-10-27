@@ -19,6 +19,7 @@ import { ExportService } from "../services/exportService";
 import { UMLDiagram, UMLProject, UseCaseElement, ActivityElement } from "../types/umlTypes";
 import { EditableTitle } from "../components/EditableTitle";
 import { DiagramTabs } from "../components/DiagramTabs";
+import { ElementPreview } from "../components/ElementPreview";
 
 export default function App() {
   const diagramState = useDiagramState();
@@ -42,7 +43,7 @@ export default function App() {
   const { handleStageWheel, handleStagePan } = useStageZoom();
   const { handleDragMove } = useStageDragFeedback({ updateDiagram: diagramState.updateDiagram });
 
-  // === 🎨 Diagramas e operações ===
+  // === Diagramas e operações ===
   const operations = useDiagramOperations(
     {
       diagram: diagramState.diagram,
@@ -80,7 +81,7 @@ export default function App() {
     clearEditingState: diagramState.clearEditingState,
   });
 
-  // === 🔄 Comunicação com VSCode ===
+  // === Comunicação com VSCode ===
   const vsCodeComm = useVSCodeCommunication(
     diagramState.diagram,
     diagramState.diagram.metadata.type,
@@ -101,7 +102,7 @@ export default function App() {
     }
   );
 
-  // === 🧭 Alternar entre diagramas ===
+  // === Alternar entre diagramas ===
   const handleSwitchDiagram = (index: number) => {
     if (index < 0 || index >= project.diagrams.length) return;
     const targetDiagram = project.diagrams[index];
@@ -109,7 +110,7 @@ export default function App() {
     diagramState.setDiagram(targetDiagram);
   };
 
-  // === 🧩 Atualiza projeto quando o diagrama atual muda ===
+  // === Atualiza projeto quando o diagrama atual muda ===
   useEffect(() => {
     setProject((prev) => {
       if (!prev.diagrams.length) return prev;
@@ -119,7 +120,7 @@ export default function App() {
     });
   }, [diagramState.diagram, activeDiagramIndex]);
 
-  // === 🔄 Resetar estado do diagrama ===
+  // === Resetar estado do diagrama ===
   const resetDiagramState = (type: "usecase" | "activity") => {
     const newDiagram: UMLDiagram = {
       metadata: {
@@ -142,7 +143,7 @@ export default function App() {
     });
   };
 
-  // === ➕ Novo diagrama ===
+  // === Novo diagrama ===
   const handleNewDiagram = () => {
     const newDiagram: UMLDiagram = {
       metadata: {
@@ -346,6 +347,12 @@ export default function App() {
                   />
                 )
               )}
+              <ElementPreview
+                tool={diagramState.tool}
+                x={stageInteractions.previewPosition?.x || 0}
+                y={stageInteractions.previewPosition?.y || 0}
+                visible={diagramState.creationState === "placing"}
+              />
             </Layer>
           </Stage>
         </div>
