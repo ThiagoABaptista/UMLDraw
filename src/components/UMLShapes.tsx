@@ -18,7 +18,7 @@ const getCommonProps = (
   fillEnabled: false,
 });
 
-// === 🧍 Ator (Stickman) ===
+// === Ator (Stickman) ===
 export const drawActor = (
   x: number,
   y: number,
@@ -31,7 +31,7 @@ export const drawActor = (
   const stroke = isSelected ? "#2563eb" : color;
   const shadow = isSelected ? "#60a5fa" : "transparent";
 
-  // 🎨 proporções ajustadas
+  // proporções ajustadas
   const headRadius = Math.min(width, height) * 0.12;
   const headCenterX = width / 2;
   const headCenterY = headRadius + 2;
@@ -63,7 +63,7 @@ export const drawActor = (
   );
 };
 
-// === 🟢 Caso de Uso ===
+// === Caso de Uso ===
 export const drawUseCase = (
   x: number,
   y: number,
@@ -98,7 +98,7 @@ export const drawUseCase = (
   );
 };
 
-// === 🟦 Atividade ===
+// === Atividade ===
 export const drawActivity = (
   x: number,
   y: number,
@@ -125,7 +125,7 @@ export const drawActivity = (
   );
 };
 
-// === ⚫ Start Node ===
+// === Start Node ===
 export const drawStart = (
   x: number,
   y: number,
@@ -156,7 +156,7 @@ export const drawStart = (
   );
 };
 
-// === 🔴 End Node ===
+// === End Node ===
 export const drawEnd = (
   x: number,
   y: number,
@@ -187,7 +187,7 @@ export const drawEnd = (
   );
 };
 
-// === 🔶 Decisão ===
+// === Decisão ===
 export const drawDecision = (
   x: number,
   y: number,
@@ -209,7 +209,7 @@ export const drawDecision = (
   );
 };
 
-// === 🟫 Fork / Join ===
+// === Fork / Join ===
 export const drawFork = (
   x: number,
   y: number,
@@ -221,29 +221,29 @@ export const drawFork = (
 ) => {
   const fillColor = color;
   const stroke = isSelected ? "#2563eb" : "transparent";
-  const barHeight = Math.min(height * 0.15, 12);
-  const offsetY = (height - barHeight) / 2;
 
   return (
     <Group x={x} y={y} listening>
       <Rect
         x={0}
-        y={offsetY}
+        y={0}
         width={width}
-        height={barHeight}
+        height={height}
         fill={fillColor}
         stroke={stroke}
         strokeWidth={isSelected ? strokeWidth * 1.5 : 0}
         shadowColor={isSelected ? "#60a5fa" : "transparent"}
         shadowBlur={isSelected ? 10 : 0}
         shadowOpacity={isSelected ? 0.6 : 0}
+        cornerRadius={2}
       />
     </Group>
   );
 };
 
-// === 🟫 Join ===
+// === Join ===
 export const drawJoin = drawFork;
 
-// === 🟣 Merge ===
+
+// === Merge ===
 export const drawMerge = drawDecision;

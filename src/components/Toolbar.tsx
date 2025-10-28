@@ -289,12 +289,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <FileDown size={18} />
         </button>
 
-        {onNewDiagram && (
-          <button onClick={onNewDiagram} className="toolbar-icon-button" title="Novo Diagrama">
-            <FilePlus size={18} />
-          </button>
-        )}
-
         <button
           onClick={onDeleteRequested}
           className="toolbar-icon-button danger"

@@ -162,7 +162,7 @@ export default function App() {
     diagramState.setDiagram(newDiagram);
   };
 
-  // === ❌ Deletar diagrama ===
+  // === Deletar diagrama ===
   const handleDeleteDiagram = (index: number) => {
     if (project.diagrams.length === 1) {
       vsCodeComm.showMessage("error", "O projeto deve conter pelo menos um diagrama.");
@@ -202,7 +202,7 @@ export default function App() {
     }
   };
 
-  // === 🗑️ Exclusão de elementos ===
+  // === Exclusão de elementos ===
   const [confirmState, setConfirmState] = useState({
     open: false,
     message: "",
@@ -225,7 +225,7 @@ export default function App() {
     }
   };
 
-  // === ⌨️ Atalhos ===
+  // ===  Atalhos ===
   useKeyboardShortcuts({
     onDelete: () => {
       if (diagramState.selectedElement) handleDeleteRequest(diagramState.selectedElement);
@@ -235,7 +235,7 @@ export default function App() {
     onNewDiagram: handleNewDiagram,
   });
 
-  // === 🧩 Alterar tipo de diagrama ===
+  // === Alterar tipo de diagrama ===
   const handleChangeDiagramType = (newType: "usecase" | "activity") => {
     if (newType === diagramState.diagram.metadata.type) return;
 

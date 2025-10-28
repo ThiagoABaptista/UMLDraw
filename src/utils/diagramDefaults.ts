@@ -14,8 +14,8 @@ export const UML_DEFAULTS: Record<string, ElementDefaults> = {
   end:      { width: 40,  height: 40,  scaleBoost: 2.0 },
   activity: { width: 140, height: 70,  scaleBoost: 1.6 },
   decision: { width: 60,  height: 60,  scaleBoost: 2.2 },
-  fork:     { width: 120, height: 40,  scaleBoost: 2.0 },
-  join:     { width: 120, height: 40,  scaleBoost: 2.0 },
+  fork:     { width: 5,  height: 160, scaleBoost: 2.0 },
+  join:     { width: 5,  height: 160, scaleBoost: 2.0 },
   merge:    { width: 60,  height: 60,  scaleBoost: 2.0 },
 };
 

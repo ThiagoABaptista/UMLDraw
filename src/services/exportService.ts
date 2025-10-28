@@ -2,15 +2,6 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
-/*
-declare global {
-  interface Window {
-    html2canvas: any;
-    jspdf: any;
-  }
-}
-*/
-
 export class ExportService {
   // Exportar para PNG
   static async exportToPNG(element: HTMLElement, filename: string = 'diagram.png'): Promise<void> {
