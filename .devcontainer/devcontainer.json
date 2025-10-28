@@ -1,16 +1,24 @@
 {
-  "name": "UMLDraw Dev Environment",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
+  "name": "UMLDraw Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "customizations": {
     "vscode": {
       "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
         "editor.formatOnSave": true
       },
       "extensions": [
+        "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "streetsidesoftware.code-spell-checker",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-typescript-tslint-plugin"
       ]
     }
   },
-  "postCreateCommand": "npm install"
+  "postCreateCommand": "npm install && npm run compile",
+  "forwardPorts": [3000],
+  "remoteUser": "node"
 }
