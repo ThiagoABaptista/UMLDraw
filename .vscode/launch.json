@@ -2,11 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run UMLDraw Extension",
+      "name": "Executar Extensão UMLDraw",
       "type": "extensionHost",
       "request": "launch",
+      "runtimeExecutable": "${execPath}",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "npm: compile"
     }
   ]

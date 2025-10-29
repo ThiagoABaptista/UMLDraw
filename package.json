@@ -59,8 +59,9 @@
     }
   },
   "scripts": {
-    "compile": "tsc -p .",
-    "watch": "tsc -p . -w",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts,tsx",
     "build:webview": "webpack --mode production",
     "watch:webview": "webpack --watch --mode development",
     "build": "npm run build:webview && npm run compile",
