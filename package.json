@@ -2,7 +2,7 @@
   "name": "umldraw",
   "displayName": "UMLDraw",
   "description": "Extensão do VS Code para desenhar diagramas UML (React + Konva).",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "ThiagoBaptista",
   "engines": {
     "vscode": "^1.84.0"
