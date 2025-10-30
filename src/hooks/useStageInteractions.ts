@@ -79,14 +79,12 @@ export const useStageInteractions = (props: StageInteractionsProps) => {
           return;
         }
 
-        // Cancela conexão, edição, e limpa seleção
-        if (connectionState !== "idle") {
-          setConnectionState("idle");
-          setConnectionStart(null);
+        if (connectionState === "idle") {
+          clearEditingState();
+          setSelectedElement(null);
+        } else {
+          // Mantém o estado de conexão
         }
-
-        clearEditingState();
-        setSelectedElement(null); // 👉 mostra infos do diagrama
       }
     },
     [

@@ -181,7 +181,7 @@ export default function App() {
     setConfirmDeleteDiagram({ open: false });
   };
 
-  // === 📄 Exportações ===
+  // === Exportações ===
   const handleExportPNG = async () => {
     const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
     if (stageContainer) {
@@ -230,7 +230,30 @@ export default function App() {
     onDelete: () => {
       if (diagramState.selectedElement) handleDeleteRequest(diagramState.selectedElement);
     },
-    onEscape: () => diagramState.setSelectedElement(null),
+
+    onEscape: () => {
+      // Se estiver criando um elemento → cancelar
+      if (diagramState.creationState === "placing") {
+        diagramState.setCreationState("idle");
+        diagramState.setTool("select");
+        vsCodeComm.showMessage("info", "Criação de elemento cancelada.");
+        return;
+      }
+
+      // Se estiver criando uma relação → cancelar
+      if (diagramState.connectionState !== "idle") {
+        diagramState.setConnectionState("idle");
+        diagramState.setConnectionStart(null);
+        diagramState.setTool("select");
+        vsCodeComm.showMessage("info", "Criação de relacionamento cancelada.");
+        return;
+      }
+
+      // Caso contrário → apenas limpa seleção
+      diagramState.setSelectedElement(null);
+      diagramState.clearEditingState();
+    },
+
     onSave: () => vsCodeComm.handleSaveProject(project),
     onNewDiagram: handleNewDiagram,
   });
