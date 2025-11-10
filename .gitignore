@@ -10,4 +10,7 @@ Thumbs.db
 .vscode/.*.db
 .vscode-test/
 EOF
-.coverage/
+# Testes e cobertura
+coverage/
+jest-cache/
+*.log
