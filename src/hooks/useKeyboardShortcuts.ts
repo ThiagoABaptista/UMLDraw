@@ -24,7 +24,7 @@ export const useKeyboardShortcuts = ({
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
 
-      // 🔒 Evita capturar eventos quando o foco está em inputs, textareas ou edições de texto
+      // Evita capturar eventos quando o foco está em inputs, textareas ou edições de texto
       if (
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -33,25 +33,25 @@ export const useKeyboardShortcuts = ({
         return;
       }
 
-      // ⎋ ESC limpa seleção
+      // ESC limpa seleção
       if (e.key === "Escape" && onEscape) {
         e.preventDefault();
         onEscape();
       }
 
-      // ⌫ Delete / Backspace remove elemento
+      // Delete / Backspace remove elemento
       if ((e.key === "Delete" || e.key === "Backspace") && onDelete) {
         e.preventDefault();
         onDelete();
       }
 
-      // 💾 Ctrl+S → salvar projeto
+      // Ctrl+S → salvar projeto
       if (e.ctrlKey && e.key.toLowerCase() === "s" && onSave) {
         e.preventDefault();
         onSave();
       }
 
-      // 🆕 Ctrl+N → novo diagrama
+      // Ctrl+N → novo diagrama
       if (e.ctrlKey && e.key.toLowerCase() === "n" && onNewDiagram) {
         e.preventDefault();
         onNewDiagram();

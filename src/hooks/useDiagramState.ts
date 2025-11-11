@@ -61,12 +61,10 @@ export const useDiagramState = () => {
   const [selectedRelationshipType, setSelectedRelationshipType] =
     useState<RelationshipType>("association");
 
-  // ✅ Corrigido — trata o caso 'null' de forma segura
   const updateDiagram = useCallback((updater: (prev: UMLDiagram) => UMLDiagram) => {
     setDiagram((prev) => (prev ? updater(prev) : initialDiagram));
   }, []);
 
-  // ✅ Corrigido — ignora se o diagrama ainda não foi definido
   const clearEditingState = useCallback(() => {
     setDiagram((prev) => {
       if (!prev) return prev;

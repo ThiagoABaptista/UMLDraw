@@ -3,7 +3,7 @@ import { UMLDiagram } from "../types/umlTypes";
 import { useVSCodeCommunication } from "./useVSCodeCommunication";
 
 export const useExportHandlers = (diagram: UMLDiagram, showMessage: (type: 'info' | 'error', text: string) => void) => {
-  // 📤 Exportar PNG
+  // Exportar PNG
   const handleExportPNG = async () => {
     try {
       const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;
@@ -17,7 +17,7 @@ export const useExportHandlers = (diagram: UMLDiagram, showMessage: (type: 'info
     }
   };
 
-  // 📄 Exportar PDF (com suporte a comentários)
+  // Exportar PDF (com suporte a comentários)
   const handleExportPDF = async () => {
     try {
       const stageContainer = document.querySelector(".konvajs-content") as HTMLElement;

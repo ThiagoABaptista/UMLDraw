@@ -43,19 +43,19 @@ export const useVSCodeCommunication = (
     [diagram, diagramType]
   );
 
-  /** 🔹 Salvar diagrama simples (.uml) */
+  /** Salvar diagrama simples (.uml) */
   const handleSaveToFile = useCallback(() => {
     const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
     vscodePostMessage({ command: "saveToFile", diagram: buildDiagramPayload(), fileName });
   }, [diagram, getFileName, buildDiagramPayload]);
 
-  /** 🔹 Salvar como novo (.uml) */
+  /** Salvar como novo (.uml) */
   const handleSaveAs = useCallback(() => {
     const fileName = getFileName ? getFileName() : `${diagram.metadata.name || "Diagrama"}.uml`;
     vscodePostMessage({ command: "saveAsFile", diagram: buildDiagramPayload(), fileName });
   }, [diagram, getFileName, buildDiagramPayload]);
 
-  /** 🔹 Salvar projeto (.umlproj) */
+  /** Salvar projeto (.umlproj) */
   const handleSaveProject = useCallback((project: UMLProject) => {
     vscodePostMessage({
       command: "saveProject",
@@ -64,17 +64,17 @@ export const useVSCodeCommunication = (
     });
   }, []);
 
-  /** 🔹 Carregar arquivo */
+  /** Carregar arquivo */
   const handleLoad = useCallback(() => {
     vscodePostMessage({ command: "requestLoad" });
   }, []);
 
-  /** 🔹 Carregar projeto completo */
+  /** Carregar projeto completo */
   const handleLoadProject = useCallback(() => {
     vscodePostMessage({ command: "requestLoadProject" });
   }, []);
 
-  /** 🔹 Listener para mensagens */
+  /** Listener para mensagens */
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;

@@ -13,7 +13,7 @@ export const useStageZoom = () => {
 
   const lastPosition = useRef<{ x: number; y: number } | null>(null);
 
-  /** 🖱️ Zoom relativo ao ponteiro */
+  /** Zoom relativo ao ponteiro */
   const handleStageWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
 
@@ -47,7 +47,7 @@ export const useStageZoom = () => {
     stage.batchDraw();
   }, []);
 
-  /** ✋ Pan (arrastar canvas) */
+  /** Pan (arrastar canvas) */
   const handleStagePan = useCallback((e: KonvaEventObject<WheelEvent>) => {
     if (!e.evt.ctrlKey && e.evt.buttons === 1) {
       const stage = e.target.getStage();
@@ -70,7 +70,7 @@ export const useStageZoom = () => {
     }
   }, []);
 
-  /** 🔁 Duplo clique → reset zoom e posição */
+  /** Duplo clique → reset zoom e posição */
   const handleDoubleClick = useCallback((e: KonvaEventObject<MouseEvent>) => {
     const stage = e.target.getStage();
     if (!stage) return;
