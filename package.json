@@ -2,12 +2,15 @@
   "name": "umldraw",
   "displayName": "UMLDraw",
   "description": "Extensão do VS Code para desenhar diagramas UML (React + Konva).",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "ThiagoBaptista",
   "engines": {
     "vscode": "^1.84.0"
   },
-  "categories": ["Visualization", "Other"],
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
   "activationEvents": [
     "onCommand:umlDraw.start"
   ],
@@ -64,12 +67,20 @@
     "watch:webview": "webpack --watch --mode development",
     "build": "npm run build:webview && npm run compile",
     "vscode:prepublish": "npm run build",
-    "package": "npx @vscode/vsce package"
+    "package": "npx @vscode/vsce package",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --watchAll=false",
+    "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.24",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@types/testing-library__jest-dom": "^5.14.9",
     "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.84.0",
     "@vscode/vsce": "^2.15.0",
@@ -77,10 +88,14 @@
     "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.2",
     "file-loader": "^6.2.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "process": "^0.11.10",
     "raw-loader": "^4.0.2",
     "style-loader": "^4.0.0",
+    "ts-jest": "^29.4.5",
     "ts-loader": "^9.5.4",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0",
     "url-loader": "^4.1.1",
     "util": "^0.12.5",
@@ -99,7 +114,7 @@
     "react-dom": "^19.1.1",
     "react-konva": "^19.0.10",
     "use-image": "^1.1.4",
-    "uuid": "^13.0.0"
+    "uuid": "^8.3.2"
   },
   "repository": {
     "type": "git",

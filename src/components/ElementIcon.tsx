@@ -41,7 +41,7 @@ export const ElementIcon: React.FC<ElementIconProps> = ({
   const scale = defaults.scaleBoost ?? 1.0;
   const strokeWidth = Math.max(1, 1.5 * scale);
 
-  // 🔁 Escolhe a função de desenho conforme o tipo UML
+  // Escolhe a função de desenho conforme o tipo UML
   const renderShape = () => {
     switch (element.type) {
       case "actor":

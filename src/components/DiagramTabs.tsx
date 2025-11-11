@@ -18,13 +18,14 @@ export const DiagramTabs: React.FC<DiagramTabsProps> = ({
   onDelete,
 }) => {
   return (
-    <div className="diagram-tabs-container">
+    <div className="diagram-tabs-container" data-testid="diagram-tabs">
       <div className="diagram-tabs-bar">
         {diagrams.map((d, i) => (
           <div
             key={d.metadata.name}
             className={`diagram-tab ${i === activeIndex ? "active" : ""}`}
             onClick={() => onSwitch(i)}
+            data-testid={`tab-${i}`}
           >
             {d.metadata.name}
             <X
@@ -33,12 +34,18 @@ export const DiagramTabs: React.FC<DiagramTabsProps> = ({
                 e.stopPropagation();
                 onDelete(i);
               }}
+              data-testid="x-icon"
             />
           </div>
         ))}
       </div>
-      <button className="diagram-tab-new" onClick={onNew} title="Novo Diagrama">
-        <Plus size={16} />
+      <button 
+        className="diagram-tab-new" 
+        onClick={onNew} 
+        title="Novo Diagrama"
+        data-testid="new-tab-btn"
+      >
+        <Plus size={16} data-testid="plus-icon" />
       </button>
     </div>
   );

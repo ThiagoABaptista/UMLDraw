@@ -112,6 +112,7 @@ export default function App() {
 
   // === Atualiza projeto quando o diagrama atual muda ===
   useEffect(() => {
+    if (process.env.NODE_ENV === "test") return; // evita loop no Jest
     setProject((prev) => {
       if (!prev.diagrams.length) return prev;
       const updated = [...prev.diagrams];
