@@ -15,7 +15,7 @@ export class DiagramStorage {
   }
 
   // =====================================================
-  // 📁 SALVAR DIAGRAMA / PROJETO
+  // SALVAR DIAGRAMA / PROJETO
   // =====================================================
 
   /**
@@ -37,7 +37,7 @@ export class DiagramStorage {
 
       if (!uri) return false;
 
-      // ✅ Criação do arquivo conforme o tipo
+      // Criação do arquivo conforme o tipo
       let content: string;
 
       if (format === "umlproj") {
@@ -75,7 +75,7 @@ export class DiagramStorage {
   }
 
   // =====================================================
-  // 📂 CARREGAR DIAGRAMA / PROJETO
+  // CARREGAR DIAGRAMA / PROJETO
   // =====================================================
 
   /**
@@ -112,7 +112,7 @@ export class DiagramStorage {
   }
 
   // =====================================================
-  // 💾 WORKSPACE STORAGE
+  // WORKSPACE STORAGE
   // =====================================================
 
   async saveToWorkspace(diagram: UMLDiagram): Promise<void> {
@@ -142,7 +142,7 @@ export class DiagramStorage {
   }
 
   // =====================================================
-  // 🧱 TEMPLATES E METADADOS
+  // TEMPLATES E METADADOS
   // =====================================================
 
   async saveAsTemplate(diagram: UMLDiagram, templateName: string): Promise<void> {

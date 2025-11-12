@@ -12,6 +12,7 @@ const config: Config = {
     // Mocks para bibliotecas que causam problemas nos testes
     "^html2canvas$": "<rootDir>/__mocks__/html2canvas.js",
     "^jspdf$": "<rootDir>/__mocks__/jspdf.js",
+    "^vscode$": "<rootDir>/__mocks__/vscode.ts",
   },
   transform: {
     "^.+\\.(ts|tsx)$": "ts-jest"

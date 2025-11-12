@@ -71,7 +71,8 @@
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --watchAll=false",
-    "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache"
+    "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
+    "test:report": "jest --coverage --coverageReporters=text-summary --coverageReporters=html"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
