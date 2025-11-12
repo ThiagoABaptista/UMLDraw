@@ -66,5 +66,102 @@ describe('ElementIcon', () => {
     expect(screen.getByTestId('activity-shape')).toBeInTheDocument();
   });
 
-  // ... manter os outros testes do ElementIcon (eles estão funcionando)
+  it('renderiza ícone de ator corretamente', () => {
+    const element: UseCaseElement = {
+      id: '2',
+      name: 'Ator Teste',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 80,
+      type: 'actor',
+      isEditing: false,
+      color: '#123456',
+    };
+
+    render(<ElementIcon element={element} {...baseProps} />);
+    expect(screen.getByTestId('actor-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza ícone de caso de uso corretamente', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '3', name: 'UC', type: 'usecase', isEditing: false } as UseCaseElement}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByTestId('usecase-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza ícone de start corretamente', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '4', name: 'Start', type: 'start', isEditing: false } as ActivityElement}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByTestId('start-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza ícone de end corretamente', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '5', name: 'End', type: 'end', isEditing: false } as ActivityElement}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByTestId('end-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza ícone de decision corretamente', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '6', name: 'Decision', type: 'decision', isEditing: false } as ActivityElement}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByTestId('decision-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza ícone de merge corretamente', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '7', name: 'Merge', type: 'merge', isEditing: false } as ActivityElement}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByTestId('merge-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza ícone de fork corretamente', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '8', name: 'Fork', type: 'fork', isEditing: false } as ActivityElement}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByTestId('fork-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza ícone de join corretamente', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '9', name: 'Join', type: 'join', isEditing: false } as ActivityElement}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByTestId('join-shape')).toBeInTheDocument();
+  });
+
+  it('renderiza retângulo padrão quando o tipo é desconhecido', () => {
+    render(
+      <ElementIcon
+        element={{ ...baseProps, id: '10', name: 'Desconhecido', type: 'custom', isEditing: false } as any}
+        {...baseProps}
+      />
+    );
+
+    expect(screen.getByTestId('konva-group')).toBeInTheDocument();
+    expect(screen.getByTestId('konva-rect')).toBeInTheDocument();
+  });
 });

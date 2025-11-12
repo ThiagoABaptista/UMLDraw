@@ -16,6 +16,7 @@ const mockAddPage = jest.fn();
 const mockText = jest.fn();
 const mockSetFontSize = jest.fn();
 const mockSplitTextToSize = jest.fn(() => ["linha 1", "linha 2"]);
+const mockSetProperties = jest.fn();
 
 jest.mock("jspdf", () => ({
   jsPDF: jest.fn(() => ({
@@ -25,6 +26,7 @@ jest.mock("jspdf", () => ({
     text: mockText,
     setFontSize: mockSetFontSize,
     splitTextToSize: mockSplitTextToSize,
+    setProperties: mockSetProperties,
     internal: { pageSize: { getWidth: () => 210, getHeight: () => 297 } },
   })),
 }));
@@ -41,7 +43,7 @@ if (typeof URL.revokeObjectURL === "undefined") {
 }
 
 describe("ExportService", () => {
-  // ✅ Mock global document caso não exista (Node)
+  // Mock global document caso não exista (Node)
   if (typeof document === "undefined") {
     // @ts-ignore
     global.document = {
@@ -67,7 +69,7 @@ describe("ExportService", () => {
   });
 
   it("exporta para SVG corretamente", async () => {
-    // ✅ Mock mais tipado do createElement
+    // Mock mais tipado do createElement
     const linkClick = jest
       .spyOn(document, "createElement")
       .mockImplementation((tagName: string): any => {
@@ -84,5 +86,62 @@ describe("ExportService", () => {
     await ExportService.exportToSVG(element);
     expect(linkClick).toHaveBeenCalledWith("a");
     linkClick.mockRestore();
+  });
+    it("lança erro ao falhar exportToPNG", async () => {
+    const mockHtml2Canvas = require("html2canvas");
+    mockHtml2Canvas.mockImplementationOnce(() => {
+      throw new Error("Falha renderização");
+    });
+
+    await expect(ExportService.exportToPNG(element)).rejects.toThrow("Falha ao exportar para PNG");
+  });
+
+  it("lança erro ao falhar exportToPDF", async () => {
+    const mockHtml2Canvas = require("html2canvas");
+    mockHtml2Canvas.mockImplementationOnce(() => {
+      throw new Error("Falha renderização PDF");
+    });
+
+    await expect(ExportService.exportToPDF(element)).rejects.toThrow("Falha ao exportar para PDF");
+  });
+
+  it("exporta para PDFAdvanced corretamente com metadados", async () => {
+    const mockHtml2Canvas = require("html2canvas");
+    mockHtml2Canvas.mockImplementationOnce(async () => ({
+      toDataURL: () => "data:image/png;base64,XYZ",
+      width: 800,
+      height: 600,
+    }));
+
+    await ExportService.exportToPDFAdvanced(element, {
+      metadata: { name: "Meu Diagrama" },
+    });
+
+    expect(mockSetProperties).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Meu Diagrama" })
+    );
+    expect(mockAddImage).toHaveBeenCalled();
+    expect(mockSave).toHaveBeenCalledWith("diagram.pdf");
+  });
+
+
+  it("lança erro ao falhar exportToPDFAdvanced", async () => {
+    const mockHtml2Canvas = require("html2canvas");
+    mockHtml2Canvas.mockImplementationOnce(() => {
+      throw new Error("Falha avançado");
+    });
+
+    await expect(
+      ExportService.exportToPDFAdvanced(element, { metadata: {} })
+    ).rejects.toThrow("Falha ao exportar para PDF");
+  });
+
+  it("lança erro ao falhar exportToSVG", async () => {
+    const mockHtml2Canvas = require("html2canvas");
+    mockHtml2Canvas.mockImplementationOnce(() => {
+      throw new Error("Falha renderização SVG");
+    });
+
+    await expect(ExportService.exportToSVG(element)).rejects.toThrow("Falha ao exportar para SVG");
   });
 });
